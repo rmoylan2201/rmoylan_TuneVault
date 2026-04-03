@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<BorderPane xmlns="http://javafx.com/javafx/21"
+            xmlns:fx="http://javafx.com/fxml/1"
+            fx:controller="com.example.tunevaultfx.WrappedPageController"
+            prefWidth="900" prefHeight="650"
+            style="-fx-background-color: linear-gradient(to bottom right, #0f172a, #1e293b);">
+
+    <top>
+        <HBox alignment="CENTER_LEFT" spacing="20" style="-fx-padding: 20;">
+            <Label text="Wrapped"
+                   style="-fx-text-fill: white; -fx-font-size: 28px; -fx-font-weight: bold;" />
+            <Button text="Back to Menu"
+                    onAction="#handleBackToMenu"
+                    style="-fx-background-color: #3b82f6; -fx-text-fill: white; -fx-background-radius: 20;" />
+        </HBox>
+    </top>
+
+    <center>
+        <VBox alignment="CENTER" spacing="20" style="-fx-padding: 25;">
+            <VBox spacing="14"
+                  alignment="CENTER_LEFT"
+                  maxWidth="650"
+                  style="-fx-background-color: white; -fx-background-radius: 20; -fx-padding: 28;">
+                <children>
+                    <Label text="Your Listening Summary"
+                           style="-fx-font-size: 26px; -fx-font-weight: bold;" />
+
+                    <Label text="Top Song"
+                           style="-fx-font-size: 15px; -fx-font-weight: bold;" />
+                    <Label fx:id="topSongLabel"
+                           text="-"
+                           style="-fx-font-size: 17px;" />
+                    <ProgressBar fx:id="songBar" prefWidth="500" />
+
+                    <Label text="Top Artist"
+                           style="-fx-font-size: 15px; -fx-font-weight: bold;" />
+                    <Label fx:id="topArtistLabel"
+                           text="-"
+                           style="-fx-font-size: 17px;" />
+                    <ProgressBar fx:id="artistBar" prefWidth="500" />
+
+                    <Label text="Favorite Genre"
+                           style="-fx-font-size: 15px; -fx-font-weight: bold;" />
+                    <Label fx:id="favoriteGenreLabel"
+                           text="-"
+                           style="-fx-font-size: 17px;" />
+                    <ProgressBar fx:id="genreBar" prefWidth="500" />
+
+                    <Label text="Total Listening Time"
+                           style="-fx-font-size: 15px; -fx-font-weight: bold;" />
+                    <Label fx:id="totalMinutesLabel"
+                           text="-"
+                           style="-fx-font-size: 17px;" />
+
+                    <Label fx:id="summaryLabel"
+                           wrapText="true"
+                           text="-"
+                           style="-fx-font-size: 15px; -fx-text-fill: #475569;" />
+                </children>
+            </VBox>
+        </VBox>
+    </center>
+
+    <bottom>
+        <fx:include source="mini-player.fxml" />
+    </bottom>
+</BorderPane>

@@ -1,0 +1,95 @@
+{
+  "username" : "1",
+  "playlists" : {
+    "Liked Songs" : [ {
+      "title" : "Golden Hour",
+      "artist" : "Sunset Motel",
+      "album" : "Westbound",
+      "durationSeconds" : 214
+    }, {
+      "title" : "Neon Drive",
+      "artist" : "Pulse City",
+      "album" : "Night Run",
+      "durationSeconds" : 197
+    }, {
+      "title" : "Midnight Echo",
+      "artist" : "Nova Lane",
+      "album" : "Afterglow",
+      "durationSeconds" : 205
+    }, {
+      "title" : "Falling Lights",
+      "artist" : "Aria Bloom",
+      "album" : "Open Skies",
+      "durationSeconds" : 240
+    }, {
+      "title" : "Silver Dreams",
+      "artist" : "Aurora Bay",
+      "album" : "Horizon",
+      "durationSeconds" : 232
+    }, {
+      "title" : "Velvet Skies",
+      "artist" : "Luna Hart",
+      "album" : "Moon Hotel",
+      "durationSeconds" : 221
+    } ],
+    "Chill Mix" : [ {
+      "title" : "Midnight Echo",
+      "artist" : "Nova Lane",
+      "album" : "Afterglow",
+      "durationSeconds" : 205
+    }, {
+      "title" : "Velvet Skies",
+      "artist" : "Luna Hart",
+      "album" : "Moon Hotel",
+      "durationSeconds" : 221
+    } ],
+    "Workout" : [ {
+      "title" : "Neon Drive",
+      "artist" : "Pulse City",
+      "album" : "Night Run",
+      "durationSeconds" : 197
+    }, {
+      "title" : "Golden Hour",
+      "artist" : "Sunset Motel",
+      "album" : "Westbound",
+      "durationSeconds" : 214
+    } ],
+    "asdf" : [ {
+      "title" : "Glass Hearts",
+      "artist" : "The Lanes",
+      "album" : "Reflection",
+      "durationSeconds" : 201
+    }, {
+      "title" : "Velvet Skies",
+      "artist" : "Luna Hart",
+      "album" : "Moon Hotel",
+      "durationSeconds" : 221
+    }, {
+      "title" : "Midnight Echo",
+      "artist" : "Nova Lane",
+      "album" : "Afterglow",
+      "durationSeconds" : 205
+    }, {
+      "title" : "Falling Lights",
+      "artist" : "Aria Bloom",
+      "album" : "Open Skies",
+      "durationSeconds" : 240
+    }, {
+      "title" : "Silver Dreams",
+      "artist" : "Aurora Bay",
+      "album" : "Horizon",
+      "durationSeconds" : 232
+    }, {
+      "title" : "Blue Static",
+      "artist" : "The Satellites",
+      "album" : "City Radio",
+      "durationSeconds" : 188
+    } ],
+    "dfasfdasf" : [ {
+      "title" : "Neon Drive",
+      "artist" : "Pulse City",
+      "album" : "Night Run",
+      "durationSeconds" : 197
+    } ]
+  }
+}

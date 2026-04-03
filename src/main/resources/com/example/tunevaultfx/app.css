@@ -1,0 +1,14 @@
+.button {
+    -fx-cursor: hand;
+}
+
+.button:hover {
+    -fx-opacity: 0.92;
+    -fx-scale-x: 1.03;
+    -fx-scale-y: 1.03;
+}
+
+.logout-button:hover {
+    -fx-background-color: #dc2626 !important;
+    -fx-text-fill: white;
+}
