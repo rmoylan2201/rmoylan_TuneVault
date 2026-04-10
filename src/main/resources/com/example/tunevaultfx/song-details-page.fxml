@@ -46,4 +46,7 @@
             </VBox>
         </VBox>
     </center>
+    <bottom>
+        <fx:include source="mini-player.fxml" />
+    </bottom>
 </BorderPane>

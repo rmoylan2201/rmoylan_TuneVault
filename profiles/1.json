@@ -26,6 +26,11 @@
       "artist" : "Aurora Bay",
       "album" : "Horizon",
       "durationSeconds" : 232
+    }, {
+      "title" : "Glass Hearts",
+      "artist" : "The Lanes",
+      "album" : "Reflection",
+      "durationSeconds" : 201
     } ],
     "Chill Mix" : [ {
       "title" : "Midnight Echo",
@@ -37,6 +42,11 @@
       "artist" : "Luna Hart",
       "album" : "Moon Hotel",
       "durationSeconds" : 221
+    }, {
+      "title" : "Glass Hearts",
+      "artist" : "The Lanes",
+      "album" : "Reflection",
+      "durationSeconds" : 201
     } ],
     "Workout" : [ {
       "title" : "Neon Drive",
