@@ -5,13 +5,16 @@
 
 <HBox xmlns="http://javafx.com/javafx/21"
       xmlns:fx="http://javafx.com/fxml/1"
-      fx:controller="com.example.tunevaultfx.MiniPlayerController"
+      fx:controller="com.example.tunevaultfx.controllers.MiniPlayerController"
       alignment="CENTER_LEFT"
       spacing="14"
       style="-fx-background-color: #111827; -fx-padding: 14 18 14 18;">
 
     <children>
-        <VBox spacing="2" prefWidth="210">
+        <VBox spacing="2"
+              prefWidth="210"
+              onMouseClicked="#handleOpenSongDetails"
+              style="-fx-cursor: hand;">
             <children>
                 <Label fx:id="miniSongLabel"
                        text="No song playing"

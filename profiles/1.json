@@ -7,11 +7,6 @@
       "album" : "Westbound",
       "durationSeconds" : 214
     }, {
-      "title" : "Neon Drive",
-      "artist" : "Pulse City",
-      "album" : "Night Run",
-      "durationSeconds" : 197
-    }, {
       "title" : "Midnight Echo",
       "artist" : "Nova Lane",
       "album" : "Afterglow",
@@ -22,15 +17,15 @@
       "album" : "Open Skies",
       "durationSeconds" : 240
     }, {
-      "title" : "Silver Dreams",
-      "artist" : "Aurora Bay",
-      "album" : "Horizon",
-      "durationSeconds" : 232
-    }, {
       "title" : "Velvet Skies",
       "artist" : "Luna Hart",
       "album" : "Moon Hotel",
       "durationSeconds" : 221
+    }, {
+      "title" : "Silver Dreams",
+      "artist" : "Aurora Bay",
+      "album" : "Horizon",
+      "durationSeconds" : 232
     } ],
     "Chill Mix" : [ {
       "title" : "Midnight Echo",

@@ -5,7 +5,7 @@
 
 <BorderPane xmlns="http://javafx.com/javafx/21"
             xmlns:fx="http://javafx.com/fxml/1"
-            fx:controller="com.example.tunevaultfx.MainMenuController"
+            fx:controller="com.example.tunevaultfx.controllers.MainMenuController"
             prefWidth="900" prefHeight="650"
             style="-fx-background-color: linear-gradient(to bottom right, #0f172a, #1e293b);">
 

@@ -8,6 +8,30 @@ module com.example.tunevaultfx {
     requires com.fasterxml.jackson.core;
     requires com.fasterxml.jackson.annotation;
 
-    exports com.example.tunevaultfx;
-    opens com.example.tunevaultfx to javafx.fxml, com.fasterxml.jackson.databind;
+    exports com.example.tunevaultfx.app;
+    opens com.example.tunevaultfx.app to com.fasterxml.jackson.databind, javafx.fxml;
+
+    exports com.example.tunevaultfx.controllers;
+    opens com.example.tunevaultfx.controllers to com.fasterxml.jackson.databind, javafx.fxml;
+
+    exports com.example.tunevaultfx.controllers.auth;
+    opens com.example.tunevaultfx.controllers.auth to com.fasterxml.jackson.databind, javafx.fxml;
+
+    exports com.example.tunevaultfx.core;
+    opens com.example.tunevaultfx.core to com.fasterxml.jackson.databind, javafx.fxml;
+
+    exports com.example.tunevaultfx.util;
+    opens com.example.tunevaultfx.util to com.fasterxml.jackson.databind, javafx.fxml;
+
+    exports com.example.tunevaultfx.playlist;
+    opens com.example.tunevaultfx.playlist to com.fasterxml.jackson.databind, javafx.fxml;
+
+    exports com.example.tunevaultfx.findyourgenre;
+    opens com.example.tunevaultfx.findyourgenre to com.fasterxml.jackson.databind, javafx.fxml;
+
+    exports com.example.tunevaultfx.user;
+    opens com.example.tunevaultfx.user to com.fasterxml.jackson.databind, javafx.fxml;
+
+    exports com.example.tunevaultfx.session;
+    opens com.example.tunevaultfx.session to com.fasterxml.jackson.databind, javafx.fxml;
 }
