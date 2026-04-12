@@ -3,6 +3,9 @@ package com.example.tunevaultfx.session;
 import com.example.tunevaultfx.core.Song;
 import com.example.tunevaultfx.db.UserProfileDAO;
 import com.example.tunevaultfx.user.UserProfile;
+import com.example.tunevaultfx.search.SearchRecentItem;
+import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
 
 /**
  * Manages the current logged-in user and shared session state.
@@ -14,6 +17,7 @@ public class SessionManager {
     private static UserProfile currentUserProfile;
     private static String requestedPlaylistToOpen;
     private static Song selectedSong;
+    private static final ObservableList<SearchRecentItem> recentSearches = FXCollections.observableArrayList();
 
     private static final UserProfileDAO userProfileDAO = new UserProfileDAO();
 
@@ -30,11 +34,43 @@ public class SessionManager {
         }
     }
 
+    private static String selectedArtist;
+
+    public static void setSelectedArtist(String artist) {
+        selectedArtist = artist;
+    }
+
+    public static String getSelectedArtist() {
+        return selectedArtist;
+    }
+
     public static void logout() {
         currentUsername = null;
         currentUserProfile = null;
         requestedPlaylistToOpen = null;
         selectedSong = null;
+        selectedArtist = null;
+    }
+
+    public static ObservableList<SearchRecentItem> getRecentSearches() {
+        return recentSearches;
+    }
+
+    public static void addRecentSearch(SearchRecentItem item) {
+        if (item == null) {
+            return;
+        }
+
+        recentSearches.removeIf(existing -> existing.sameAs(item));
+        recentSearches.add(0, item);
+
+        while (recentSearches.size() > 20) {
+            recentSearches.remove(recentSearches.size() - 1);
+        }
+    }
+
+    public static void clearRecentSearches() {
+        recentSearches.clear();
     }
 
     public static String getCurrentUsername() {

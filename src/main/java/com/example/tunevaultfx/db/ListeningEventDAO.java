@@ -20,9 +20,19 @@ public class ListeningEventDAO {
                 return null;
             }
 
+            int duration = Math.max(song.durationSeconds(), 0);
+
             String sql = """
-                INSERT INTO listening_event (user_id, song_id, action_type, played_seconds, count_as_play)
-                VALUES (?, ?, ?, ?, ?)
+                INSERT INTO listening_event (
+                    user_id,
+                    song_id,
+                    action_type,
+                    played_seconds,
+                    song_duration_seconds,
+                    completion_ratio,
+                    count_as_play
+                )
+                VALUES (?, ?, ?, ?, ?, ?, ?)
                 """;
 
             try (Connection conn = DBConnection.getConnection();
@@ -31,7 +41,9 @@ public class ListeningEventDAO {
                 stmt.setInt(2, song.songId());
                 stmt.setString(3, "PLAY");
                 stmt.setInt(4, 0);
-                stmt.setBoolean(5, false);
+                stmt.setInt(5, duration);
+                stmt.setDouble(6, 0.0);
+                stmt.setBoolean(7, false);
                 stmt.executeUpdate();
 
                 try (ResultSet keys = stmt.getGeneratedKeys()) {
@@ -46,25 +58,35 @@ public class ListeningEventDAO {
 
         return null;
     }
-    public void updateListeningSession(Integer eventId, int playedSecondsDelta, boolean countAsPlay) {
+
+    public void updateListeningSession(Integer eventId,
+                                       int playedSeconds,
+                                       int songDurationSeconds,
+                                       double completionRatio,
+                                       boolean countAsPlay) {
         if (eventId == null) {
             return;
         }
 
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement stmt = conn.prepareStatement(
-                     "UPDATE listening_event SET played_seconds = ?, count_as_play = ? WHERE event_id = ?")) {
-            stmt.setInt(1, Math.max(0, playedSecondsDelta));
-            stmt.setBoolean(2, countAsPlay);
-            stmt.setInt(3, eventId);
+                     "UPDATE listening_event SET played_seconds = ?, song_duration_seconds = ?, completion_ratio = ?, count_as_play = ? WHERE event_id = ?")) {
+            stmt.setInt(1, Math.max(0, playedSeconds));
+            stmt.setInt(2, Math.max(0, songDurationSeconds));
+            stmt.setDouble(3, Math.max(0.0, Math.min(1.0, completionRatio)));
+            stmt.setBoolean(4, countAsPlay);
+            stmt.setInt(5, eventId);
             stmt.executeUpdate();
         } catch (SQLException e) {
             e.printStackTrace();
         }
     }
+
     public void finalizeListeningSession(Integer eventId,
                                          String actionType,
                                          int playedSeconds,
+                                         int songDurationSeconds,
+                                         double completionRatio,
                                          boolean countAsPlay) {
         if (eventId == null) {
             return;
@@ -72,11 +94,13 @@ public class ListeningEventDAO {
 
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement stmt = conn.prepareStatement(
-                     "UPDATE listening_event SET action_type = ?, played_seconds = ?, count_as_play = ? WHERE event_id = ?")) {
+                     "UPDATE listening_event SET action_type = ?, played_seconds = ?, song_duration_seconds = ?, completion_ratio = ?, count_as_play = ? WHERE event_id = ?")) {
             stmt.setString(1, actionType);
             stmt.setInt(2, Math.max(0, playedSeconds));
-            stmt.setBoolean(3, countAsPlay);
-            stmt.setInt(4, eventId);
+            stmt.setInt(3, Math.max(0, songDurationSeconds));
+            stmt.setDouble(4, Math.max(0.0, Math.min(1.0, completionRatio)));
+            stmt.setBoolean(5, countAsPlay);
+            stmt.setInt(6, eventId);
             stmt.executeUpdate();
         } catch (SQLException e) {
             e.printStackTrace();
@@ -84,6 +108,22 @@ public class ListeningEventDAO {
     }
 
     public void recordLike(String username, Song song) {
+        recordSimpleInteraction(username, song, "LIKE");
+    }
+
+    public void recordUnlike(String username, Song song) {
+        recordSimpleInteraction(username, song, "UNLIKE");
+    }
+
+    public void recordPlaylistAdd(String username, Song song) {
+        recordSimpleInteraction(username, song, "PLAYLIST_ADD");
+    }
+
+    public void recordPlaylistRemove(String username, Song song) {
+        recordSimpleInteraction(username, song, "PLAYLIST_REMOVE");
+    }
+
+    private void recordSimpleInteraction(String username, Song song, String actionType) {
         if (username == null || username.isBlank() || song == null || song.songId() <= 0) {
             return;
         }
@@ -94,14 +134,18 @@ public class ListeningEventDAO {
                 return;
             }
 
+            int duration = Math.max(song.durationSeconds(), 0);
+
             try (Connection conn = DBConnection.getConnection();
                  PreparedStatement stmt = conn.prepareStatement(
-                         "INSERT INTO listening_event (user_id, song_id, action_type, played_seconds, count_as_play) VALUES (?, ?, ?, ?, ?)")) {
+                         "INSERT INTO listening_event (user_id, song_id, action_type, played_seconds, song_duration_seconds, completion_ratio, count_as_play) VALUES (?, ?, ?, ?, ?, ?, ?)")) {
                 stmt.setInt(1, userId);
                 stmt.setInt(2, song.songId());
-                stmt.setString(3, "LIKE");
+                stmt.setString(3, actionType);
                 stmt.setInt(4, 0);
-                stmt.setBoolean(5, false);
+                stmt.setInt(5, duration);
+                stmt.setDouble(6, 0.0);
+                stmt.setBoolean(7, false);
                 stmt.executeUpdate();
             }
         } catch (SQLException e) {

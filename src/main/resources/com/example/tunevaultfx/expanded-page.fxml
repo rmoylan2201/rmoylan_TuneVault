@@ -86,11 +86,11 @@
                                                maxWidth="540"
                                                style="-fx-font-size: 44px; -fx-font-weight: bold; -fx-text-fill: #0f172a;" />
 
-                                        <Label fx:id="artistLabel"
-                                               text=""
-                                               wrapText="true"
-                                               maxWidth="540"
-                                               style="-fx-font-size: 24px; -fx-text-fill: #475569;" />
+                                        <Hyperlink fx:id="artistLink"
+                                                   text=""
+                                                   onAction="#handleOpenArtistProfile"
+                                                   wrapText="true"
+                                                   style="-fx-font-size: 18px; -fx-text-fill: #475569; -fx-border-color: transparent; -fx-padding: 0;" />
 
                                         <Label fx:id="albumLabel"
                                                text="Album: -"

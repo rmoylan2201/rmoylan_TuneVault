@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<BorderPane xmlns="http://javafx.com/javafx/21"
+            xmlns:fx="http://javafx.com/fxml/1"
+            fx:controller="com.example.tunevaultfx.search.ArtistProfileController"
+            prefWidth="1280.0"
+            prefHeight="760.0"
+            style="-fx-background-color: linear-gradient(to bottom right, #0f172a, #1e293b);">
+
+    <top>
+        <HBox alignment="CENTER_LEFT" spacing="12" style="-fx-padding: 20 24 18 24;">
+            <children>
+                <Button text="Back to Search"
+                        onAction="#handleBackToSearch"
+                        prefWidth="130"
+                        prefHeight="40"
+                        style="-fx-background-color: #3b82f6; -fx-text-fill: white; -fx-font-size: 14px; -fx-font-weight: bold; -fx-background-radius: 20;" />
+
+                <StackPane HBox.hgrow="ALWAYS" alignment="CENTER">
+                    <Label text="Artist Profile"
+                           style="-fx-text-fill: white; -fx-font-size: 30px; -fx-font-weight: bold;" />
+                </StackPane>
+
+                <Region prefWidth="130" />
+            </children>
+        </HBox>
+    </top>
+
+    <center>
+        <VBox spacing="20" style="-fx-padding: 12 24 20 24;">
+            <children>
+                <VBox spacing="10"
+                      style="-fx-background-color: #f8fafc; -fx-background-radius: 24; -fx-padding: 24;">
+                    <children>
+                        <Label fx:id="artistNameLabel"
+                               text="Artist Name"
+                               style="-fx-font-size: 32px; -fx-font-weight: bold; -fx-text-fill: #1e293b;" />
+
+                        <Label fx:id="artistSummaryLabel"
+                               text="Songs available: 0"
+                               style="-fx-text-fill: #64748b; -fx-font-size: 15px;" />
+                    </children>
+                </VBox>
+
+                <VBox spacing="14"
+                      VBox.vgrow="ALWAYS"
+                      style="-fx-background-color: #f8fafc; -fx-background-radius: 24; -fx-padding: 24;">
+                    <children>
+                        <Label text="Popular Songs"
+                               style="-fx-font-size: 24px; -fx-font-weight: bold; -fx-text-fill: #1e293b;" />
+
+                        <ListView fx:id="artistSongsListView"
+                                  VBox.vgrow="ALWAYS"
+                                  prefHeight="560"
+                                  style="-fx-background-radius: 12; -fx-border-radius: 12;" />
+                    </children>
+                </VBox>
+            </children>
+        </VBox>
+    </center>
+
+    <bottom>
+        <fx:include source="mini-player.fxml" />
+    </bottom>
+</BorderPane>

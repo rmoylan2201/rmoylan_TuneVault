@@ -50,4 +50,6 @@ module com.example.tunevaultfx {
     opens com.example.tunevaultfx.playlist.cell to com.fasterxml.jackson.databind, javafx.fxml;
     exports com.example.tunevaultfx.musicplayer.controller;
     opens com.example.tunevaultfx.musicplayer.controller to com.fasterxml.jackson.databind, javafx.fxml;
+    exports com.example.tunevaultfx.search;
+    opens com.example.tunevaultfx.search to com.fasterxml.jackson.databind, javafx.fxml;
 }

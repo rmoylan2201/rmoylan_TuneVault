@@ -38,6 +38,7 @@ public class MusicPlayerController {
     private final UserLibraryService libraryService = new UserLibraryService();
     private final ListeningEventDAO listeningEventDAO = new ListeningEventDAO();
     private final ListeningSessionTracker sessionTracker = new ListeningSessionTracker(listeningEventDAO);
+    private final PlaylistService playlistService = new PlaylistService();
 
     private final BooleanProperty expandedPlayerVisible = new SimpleBooleanProperty(false);
     private final BooleanProperty currentSongLiked = new SimpleBooleanProperty(false);
@@ -159,12 +160,28 @@ public class MusicPlayerController {
     }
 
     public void toggleLikeCurrentSong() {
-        if (state.getCurrentSong() == null) {
+        Song currentSong = state.getCurrentSong();
+        if (currentSong == null) {
             return;
         }
 
-        new PlaylistService().toggleLikeSong(state.getCurrentSong());
+        playlistService.toggleLikeSong(currentSong);
         refreshCurrentSongLiked();
+    }
+
+    public void resetForNewSession() {
+        stop();
+        queue.clear();
+        shuffleManager.reset();
+        sessionTracker.reset();
+
+        state.setCurrentSong(null);
+        state.setCurrentSourcePlaylistName("");
+        state.setCurrentSecond(0);
+        state.setPlaying(false);
+
+        currentSongLiked.set(false);
+        expandedPlayerVisible.set(false);
     }
 
     public boolean isCurrentSongLiked() {
@@ -180,7 +197,12 @@ public class MusicPlayerController {
     }
 
     public void addCurrentSongToPlaylist(String playlistName) {
-        libraryService.addSongToPlaylist(playlistName, state.getCurrentSong());
+        Song currentSong = state.getCurrentSong();
+        if (currentSong == null || playlistName == null || playlistName.isBlank()) {
+            return;
+        }
+
+        libraryService.addSongToPlaylist(playlistName, currentSong);
     }
 
     public void toggleLoop() {

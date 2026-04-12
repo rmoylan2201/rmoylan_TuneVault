@@ -1,6 +1,7 @@
 package com.example.tunevaultfx.auth;
 
 import com.example.tunevaultfx.db.UserDAO;
+import com.example.tunevaultfx.musicplayer.controller.MusicPlayerController;
 import com.example.tunevaultfx.session.SessionManager;
 import com.example.tunevaultfx.user.User;
 import com.example.tunevaultfx.util.SceneUtil;
@@ -46,6 +47,7 @@ public class LoginPageController {
                 return;
             }
 
+            MusicPlayerController.getInstance().resetForNewSession();
             SessionManager.startSession(user.getUsername());
             SceneUtil.switchScene((Node) event.getSource(), "main-menu.fxml");
 
