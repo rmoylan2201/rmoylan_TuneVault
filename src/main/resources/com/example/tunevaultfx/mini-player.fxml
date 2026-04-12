@@ -91,6 +91,13 @@
                                         prefWidth="52"
                                         prefHeight="42"
                                         style="-fx-background-color: #e2e8f0; -fx-text-fill: #475569; -fx-font-size: 20px; -fx-font-weight: bold; -fx-background-radius: 21;" />
+
+                                <Button fx:id="miniAddButton"
+                                        text="+"
+                                        onAction="#handleMiniAddToPlaylist"
+                                        prefWidth="52"
+                                        prefHeight="42"
+                                        style="-fx-background-color: #e2e8f0; -fx-text-fill: #475569; -fx-font-size: 20px; -fx-font-weight: bold; -fx-background-radius: 21;" />
                             </children>
                         </HBox>
 

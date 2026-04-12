@@ -1,19 +1,35 @@
 package com.example.tunevaultfx.controllers;
 
-import com.example.tunevaultfx.musicplayer.MusicPlayerController;
 import com.example.tunevaultfx.core.Song;
+import com.example.tunevaultfx.musicplayer.MusicPlayerController;
+import com.example.tunevaultfx.playlist.PlaylistService;
 import com.example.tunevaultfx.session.SessionManager;
+import com.example.tunevaultfx.user.UserProfile;
 import com.example.tunevaultfx.util.SceneUtil;
 import javafx.beans.binding.Bindings;
+import javafx.collections.FXCollections;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
+import javafx.geometry.Insets;
 import javafx.scene.Node;
 import javafx.scene.control.Button;
+import javafx.scene.control.ButtonBar;
+import javafx.scene.control.ButtonType;
+import javafx.scene.control.Dialog;
 import javafx.scene.control.Hyperlink;
 import javafx.scene.control.Label;
+import javafx.scene.control.ListCell;
+import javafx.scene.control.ListView;
 import javafx.scene.control.Slider;
+import javafx.scene.input.MouseEvent;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.Priority;
+import javafx.scene.layout.Region;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+
 /**
  * Controls the shared mini-player shown across pages.
  * Handles compact playback controls, song display, and quick navigation.
@@ -30,10 +46,12 @@ public class MiniPlayerController {
     @FXML private Button miniLikeButton;
     @FXML private Button miniShuffleButton;
     @FXML private Button miniLoopButton;
+    @FXML private Button miniAddButton;
 
     @FXML private Slider miniProgressSlider;
 
     private final MusicPlayerController player = MusicPlayerController.getInstance();
+    private final PlaylistService playlistService = new PlaylistService();
 
     @FXML
     public void initialize() {
@@ -55,6 +73,7 @@ public class MiniPlayerController {
             updateMiniLikeButton();
             updateMiniTime();
             updateMiniPlaylistLink();
+            updateMiniAddButton();
         });
 
         player.currentSecondProperty().addListener((obs, oldVal, newVal) -> updateMiniTime());
@@ -68,12 +87,14 @@ public class MiniPlayerController {
         updateMiniTime();
         updateMiniPlaylistLink();
         updateMiniModeButtons();
+        updateMiniAddButton();
     }
 
     @FXML
     private void handleMiniPrevious() {
         player.previous();
         updateMiniLikeButton();
+        updateMiniAddButton();
     }
 
     @FXML
@@ -85,6 +106,7 @@ public class MiniPlayerController {
     private void handleMiniNext() {
         player.next();
         updateMiniLikeButton();
+        updateMiniAddButton();
     }
 
     @FXML
@@ -106,6 +128,19 @@ public class MiniPlayerController {
     }
 
     @FXML
+    private void handleMiniAddToPlaylist() {
+        Song currentSong = player.getCurrentSong();
+        UserProfile profile = SessionManager.getCurrentUserProfile();
+
+        if (currentSong == null || profile == null || profile.getPlaylists().isEmpty()) {
+            return;
+        }
+
+        showPlaylistPicker(profile, currentSong);
+        updateMiniAddButton();
+    }
+
+    @FXML
     private void handleOpenCurrentPlaylist(ActionEvent event) throws IOException {
         String playlistName = player.getCurrentSourcePlaylistName();
         if (playlistName == null || playlistName.isBlank()) {
@@ -117,13 +152,36 @@ public class MiniPlayerController {
     }
 
     @FXML
-    private void handleOpenNowPlaying(javafx.scene.input.MouseEvent event) throws IOException {
-        Song song = player.getCurrentSong();
-        if (song == null) {
+    private void handleOpenNowPlaying(MouseEvent event) throws IOException {
+        if (player.getCurrentSong() == null) {
             return;
         }
 
         SceneUtil.switchScene((Node) event.getSource(), "nowplaying-page.fxml");
+    }
+
+    private void showPlaylistPicker(UserProfile profile, Song song) {
+        Dialog<Void> dialog = new Dialog<>();
+        dialog.setTitle("Add to Playlist");
+        dialog.setHeaderText("Choose playlists for \"" + song.title() + "\"");
+
+        ButtonType closeButtonType = new ButtonType("Done", ButtonBar.ButtonData.OK_DONE);
+        dialog.getDialogPane().getButtonTypes().add(closeButtonType);
+
+        List<String> playlistNames = new ArrayList<>(profile.getPlaylists().keySet());
+        ListView<String> playlistListView = new ListView<>(FXCollections.observableArrayList(playlistNames));
+        playlistListView.setPrefHeight(320);
+        playlistListView.setFocusTraversable(false);
+        playlistListView.setCellFactory(listView -> new PlaylistPickerCell(profile, song));
+
+        dialog.getDialogPane().setContent(playlistListView);
+        dialog.getDialogPane().setPrefWidth(420);
+        dialog.showAndWait();
+    }
+
+    private boolean songIsInPlaylist(UserProfile profile, String playlistName, Song song) {
+        var songs = profile.getPlaylists().get(playlistName);
+        return songs != null && songs.contains(song);
     }
 
     private void updateMiniPlaylistLink() {
@@ -147,16 +205,30 @@ public class MiniPlayerController {
                 ? "-fx-background-color: #ef4444; -fx-text-fill: white; -fx-font-size: 20px; -fx-font-weight: bold; -fx-background-radius: 21;"
                 : "-fx-background-color: #e2e8f0; -fx-text-fill: #475569; -fx-font-size: 20px; -fx-font-weight: bold; -fx-background-radius: 21;");
     }
+
+    private void updateMiniAddButton() {
+        boolean hasSong = player.getCurrentSong() != null;
+
+        miniAddButton.setDisable(!hasSong);
+        miniAddButton.setStyle(
+                "-fx-background-color: #e2e8f0; " +
+                        "-fx-text-fill: #475569; " +
+                        "-fx-font-size: 20px; " +
+                        "-fx-font-weight: bold; " +
+                        "-fx-background-radius: 21;"
+        );
+    }
+
     private void updateMiniModeButtons() {
         miniShuffleButton.setText("🔀");
         miniLoopButton.setText("↻");
 
         miniShuffleButton.setStyle(player.isShuffleEnabled()
-                ? "-fx-background-color: #fef3c7; -fx-text-fill: #1DB954; -fx-font-size: 18px; -fx-font-weight: bold; -fx-background-radius: 21;"
+                ? "-fx-background-color: #dbeafe; -fx-text-fill: #2563eb; -fx-font-size: 18px; -fx-font-weight: bold; -fx-background-radius: 21;"
                 : "-fx-background-color: #e2e8f0; -fx-text-fill: #334155; -fx-font-size: 18px; -fx-font-weight: bold; -fx-background-radius: 21;");
 
         miniLoopButton.setStyle(player.isLoopEnabled()
-                ? "-fx-background-color: #e2e8f0; -fx-text-fill: #1DB954; -fx-font-size: 18px; -fx-font-weight: bold; -fx-background-radius: 21;"
+                ? "-fx-background-color: #fef3c7; -fx-text-fill: #d97706; -fx-font-size: 18px; -fx-font-weight: bold; -fx-background-radius: 21;"
                 : "-fx-background-color: #e2e8f0; -fx-text-fill: #334155; -fx-font-size: 18px; -fx-font-weight: bold; -fx-background-radius: 21;");
     }
 
@@ -173,5 +245,89 @@ public class MiniPlayerController {
         int minutes = totalSeconds / 60;
         int seconds = totalSeconds % 60;
         return minutes + ":" + String.format("%02d", seconds);
+    }
+
+    private class PlaylistPickerCell extends ListCell<String> {
+        private final UserProfile profile;
+        private final Song song;
+
+        private final HBox root = new HBox();
+        private final Label nameLabel = new Label();
+        private final Region spacer = new Region();
+        private final Button actionButton = new Button();
+
+        PlaylistPickerCell(UserProfile profile, Song song) {
+            this.profile = profile;
+            this.song = song;
+
+            HBox.setHgrow(spacer, Priority.ALWAYS);
+            root.setSpacing(12);
+            root.setPadding(new Insets(8, 10, 8, 10));
+            root.setStyle("-fx-background-color: transparent;");
+
+            nameLabel.setStyle("-fx-text-fill: #0f172a; -fx-font-size: 14px; -fx-font-weight: bold;");
+
+            actionButton.setPrefWidth(42);
+            actionButton.setPrefHeight(32);
+            actionButton.setFocusTraversable(false);
+
+            root.getChildren().addAll(nameLabel, spacer, actionButton);
+
+            root.setOnMouseClicked(event -> {
+                String playlistName = getItem();
+                if (playlistName == null || isEmpty()) {
+                    return;
+                }
+
+                togglePlaylistMembership(playlistName);
+                event.consume();
+            });
+        }
+
+        @Override
+        protected void updateItem(String playlistName, boolean empty) {
+            super.updateItem(playlistName, empty);
+
+            if (empty || playlistName == null) {
+                setText(null);
+                setGraphic(null);
+                setStyle("-fx-background-color: transparent;");
+                return;
+            }
+
+            nameLabel.setText(playlistName);
+            refreshActionButton(playlistName);
+
+            setText(null);
+            setGraphic(root);
+            setStyle("-fx-background-color: transparent; -fx-padding: 2 0 2 0;");
+        }
+
+        private void togglePlaylistMembership(String playlistName) {
+            boolean isCurrentlyInPlaylist = songIsInPlaylist(profile, playlistName, song);
+
+            if (isCurrentlyInPlaylist) {
+                playlistService.removeSongFromPlaylist(profile, playlistName, song);
+            } else {
+                playlistService.addSongToPlaylist(profile, playlistName, song);
+            }
+
+            refreshActionButton(playlistName);
+            updateMiniAddButton();
+        }
+
+        private void refreshActionButton(String playlistName) {
+            boolean alreadyInPlaylist = songIsInPlaylist(profile, playlistName, song);
+
+            actionButton.setText(alreadyInPlaylist ? "✓" : "+");
+            actionButton.setStyle(alreadyInPlaylist
+                    ? "-fx-background-color: #dbeafe; -fx-text-fill: #2563eb; -fx-font-size: 16px; -fx-font-weight: bold; -fx-background-radius: 16;"
+                    : "-fx-background-color: #e2e8f0; -fx-text-fill: #334155; -fx-font-size: 16px; -fx-font-weight: bold; -fx-background-radius: 16;");
+
+            actionButton.setOnAction(event -> {
+                togglePlaylistMembership(playlistName);
+                event.consume();
+            });
+        }
     }
 }
