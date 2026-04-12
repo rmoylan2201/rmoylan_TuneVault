@@ -88,6 +88,13 @@
                                                wrapText="true"
                                                maxWidth="360"
                                                style="-fx-font-size: 22px; -fx-font-weight: bold; -fx-text-fill: #111827;" />
+                                        <Label fx:id="topSongArtistLabel"
+                                               text=""
+                                               wrapText="true"
+                                               maxWidth="360"
+                                               managed="false"
+                                               visible="false"
+                                               style="-fx-font-size: 15px; -fx-text-fill: #64748b;" />
                                         <ProgressBar fx:id="songBar"
                                                      prefWidth="380"
                                                      prefHeight="10" />
@@ -105,6 +112,13 @@
                                                wrapText="true"
                                                maxWidth="360"
                                                style="-fx-font-size: 22px; -fx-font-weight: bold; -fx-text-fill: #111827;" />
+                                        <Label fx:id="topArtistTopSongLabel"
+                                               text=""
+                                               wrapText="true"
+                                               maxWidth="360"
+                                               managed="false"
+                                               visible="false"
+                                               style="-fx-font-size: 15px; -fx-text-fill: #64748b;" />
                                         <ProgressBar fx:id="artistBar"
                                                      prefWidth="380"
                                                      prefHeight="10" />

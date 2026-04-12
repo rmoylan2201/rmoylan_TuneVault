@@ -1,6 +1,7 @@
-package com.example.tunevaultfx.playlist;
+package com.example.tunevaultfx.playlist.service;
 
 import com.example.tunevaultfx.core.Song;
+import com.example.tunevaultfx.playlist.PlaylistSummary;
 import com.example.tunevaultfx.user.UserProfile;
 import com.example.tunevaultfx.util.TimeUtil;
 import javafx.collections.FXCollections;

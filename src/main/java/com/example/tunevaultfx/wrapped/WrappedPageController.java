@@ -20,7 +20,13 @@ public class WrappedPageController {
     private Label topSongLabel;
 
     @FXML
+    private Label topSongArtistLabel;
+
+    @FXML
     private Label topArtistLabel;
+
+    @FXML
+    private Label topArtistTopSongLabel;
 
     @FXML
     private Label favoriteGenreLabel;
@@ -87,6 +93,20 @@ public class WrappedPageController {
         totalMinutesLabel.setText(formatDuration(stats.getTotalListeningSeconds()));
         summaryLabel.setText(stats.getSummary());
 
+        if (topSongArtistLabel != null) {
+            String topSongArtistText = buildTopSongArtistText(stats);
+            topSongArtistLabel.setText(topSongArtistText);
+            topSongArtistLabel.setVisible(!topSongArtistText.isBlank());
+            topSongArtistLabel.setManaged(!topSongArtistText.isBlank());
+        }
+
+        if (topArtistTopSongLabel != null) {
+            String topArtistTopSongText = buildTopArtistTopSongText(stats);
+            topArtistTopSongLabel.setText(topArtistTopSongText);
+            topArtistTopSongLabel.setVisible(!topArtistTopSongText.isBlank());
+            topArtistTopSongLabel.setManaged(!topArtistTopSongText.isBlank());
+        }
+
         songBar.setProgress(progressFromSeconds(stats.getTopSongSeconds(), stats.getTotalListeningSeconds()));
         artistBar.setProgress(progressFromSeconds(stats.getTopArtistSeconds(), stats.getTotalListeningSeconds()));
         genreBar.setProgress(progressFromSeconds(stats.getFavoriteGenreSeconds(), stats.getTotalListeningSeconds()));
@@ -94,6 +114,28 @@ public class WrappedPageController {
         if (rangeTitleLabel != null) {
             rangeTitleLabel.setText(range == StatsRange.DAILY ? "Today" : "Overall");
         }
+    }
+
+    private String buildTopSongArtistText(WrappedStats stats) {
+        String artistName = stats.getTopSongArtist();
+        if (artistName == null
+                || artistName.isBlank()
+                || artistName.equalsIgnoreCase("No listening data today")
+                || artistName.equalsIgnoreCase("No listening data yet")) {
+            return "";
+        }
+        return artistName;
+    }
+
+    private String buildTopArtistTopSongText(WrappedStats stats) {
+        String songTitle = stats.getTopArtistTopSong();
+        if (songTitle == null
+                || songTitle.isBlank()
+                || songTitle.equalsIgnoreCase("No listening data today")
+                || songTitle.equalsIgnoreCase("No listening data yet")) {
+            return "";
+        }
+        return "Top track: " + songTitle;
     }
 
     private void updateRangeButtons() {

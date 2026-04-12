@@ -1,4 +1,4 @@
-package com.example.tunevaultfx.playlist;
+package com.example.tunevaultfx.playlist.service;
 
 import com.example.tunevaultfx.core.Song;
 import javafx.collections.FXCollections;

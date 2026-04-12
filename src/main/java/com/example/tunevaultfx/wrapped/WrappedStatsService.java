@@ -25,29 +25,36 @@ public class WrappedStatsService {
             }
 
             StatValue topSong = queryTopSong(userId, range);
+            String topSongArtist = queryTopSongArtist(userId, range);
             StatValue topArtist = queryTopArtist(userId, range);
+            String topArtistTopSong = queryTopArtistTopSong(userId, topArtist.label(), range);
             StatValue favoriteGenre = queryFavoriteGenre(userId, range);
             int totalSeconds = queryTotalListeningSeconds(userId, range);
 
-            if (topSong.seconds == 0 && topArtist.seconds == 0 && favoriteGenre.seconds == 0 && totalSeconds == 0) {
+            if (topSong.seconds() == 0
+                    && topArtist.seconds() == 0
+                    && favoriteGenre.seconds() == 0
+                    && totalSeconds == 0) {
                 return emptyForRange(range);
             }
 
             String prefix = range == StatsRange.DAILY ? "Today" : "Overall";
 
             String summary = prefix
-                    + " top song: " + topSong.label
-                    + ". Top artist: " + topArtist.label
-                    + ". Favorite genre: " + favoriteGenre.label
+                    + " top song: " + topSong.label()
+                    + ". Top artist: " + topArtist.label()
+                    + ". Favorite genre: " + favoriteGenre.label()
                     + ". Total listening time: " + formatDuration(totalSeconds) + ".";
 
             return new WrappedStats(
-                    topSong.label,
-                    topSong.seconds,
-                    topArtist.label,
-                    topArtist.seconds,
-                    favoriteGenre.label,
-                    favoriteGenre.seconds,
+                    topSong.label(),
+                    topSong.seconds(),
+                    topSongArtist,
+                    topArtist.label(),
+                    topArtist.seconds(),
+                    topArtistTopSong,
+                    favoriteGenre.label(),
+                    favoriteGenre.seconds(),
                     totalSeconds,
                     summary
             );
@@ -63,7 +70,9 @@ public class WrappedStatsService {
                     "No listening data today",
                     0,
                     "No listening data today",
+                    "No listening data today",
                     0,
+                    "No listening data today",
                     "No listening data today",
                     0,
                     0,
@@ -101,6 +110,22 @@ public class WrappedStatsService {
         return querySingleStat(userId, range, sql);
     }
 
+    private String queryTopSongArtist(int userId, StatsRange range) throws SQLException {
+        String sql = """
+                SELECT a.name AS label, COALESCE(SUM(le.played_seconds), 0) AS total_seconds
+                FROM listening_event le
+                JOIN song s ON s.song_id = le.song_id
+                JOIN artist a ON a.artist_id = s.artist_id
+                WHERE le.user_id = ?
+                """ + dateFilter(range) + """
+                GROUP BY s.song_id, s.title, a.name
+                ORDER BY total_seconds DESC, s.title ASC
+                LIMIT 1
+                """;
+
+        return querySingleLabel(userId, sql, range);
+    }
+
     private StatValue queryTopArtist(int userId, StatsRange range) throws SQLException {
         String sql = """
                 SELECT a.name AS label, COALESCE(SUM(le.played_seconds), 0) AS total_seconds
@@ -115,6 +140,42 @@ public class WrappedStatsService {
                 """;
 
         return querySingleStat(userId, range, sql);
+    }
+
+    private String queryTopArtistTopSong(int userId, String artistName, StatsRange range) throws SQLException {
+        if (artistName == null
+                || artistName.isBlank()
+                || artistName.equalsIgnoreCase("No listening data today")
+                || artistName.equalsIgnoreCase("No listening data yet")) {
+            return range == StatsRange.DAILY ? "No listening data today" : "No listening data yet";
+        }
+
+        String sql = """
+                SELECT s.title AS label, COALESCE(SUM(le.played_seconds), 0) AS total_seconds
+                FROM listening_event le
+                JOIN song s ON s.song_id = le.song_id
+                JOIN artist a ON a.artist_id = s.artist_id
+                WHERE le.user_id = ?
+                  AND a.name = ?
+                """ + dateFilter(range) + """
+                GROUP BY s.song_id, s.title
+                ORDER BY total_seconds DESC, s.title ASC
+                LIMIT 1
+                """;
+
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setInt(1, userId);
+            stmt.setString(2, artistName);
+
+            try (ResultSet rs = stmt.executeQuery()) {
+                if (rs.next()) {
+                    return rs.getString("label");
+                }
+            }
+        }
+
+        return range == StatsRange.DAILY ? "No listening data today" : "No listening data yet";
     }
 
     private StatValue queryFavoriteGenre(int userId, StatsRange range) throws SQLException {
@@ -171,6 +232,23 @@ public class WrappedStatsService {
                         : "No listening data yet";
 
                 return new StatValue(emptyLabel, 0);
+            }
+        }
+    }
+
+    private String querySingleLabel(int userId, String sql, StatsRange range) throws SQLException {
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setInt(1, userId);
+
+            try (ResultSet rs = stmt.executeQuery()) {
+                if (rs.next()) {
+                    return rs.getString("label");
+                }
+
+                return range == StatsRange.DAILY
+                        ? "No listening data today"
+                        : "No listening data yet";
             }
         }
     }
