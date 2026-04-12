@@ -1,48 +1,42 @@
 package com.example.tunevaultfx.wrapped;
 
-/**
- * Holds Wrapped analytics values for one user.
- */
 public class WrappedStats {
 
     private final String topSong;
     private final int topSongSeconds;
+    private final String topSongArtist;
+
     private final String topArtist;
     private final int topArtistSeconds;
+    private final String topArtistTopSong;
+
     private final String favoriteGenre;
     private final int favoriteGenreSeconds;
+
     private final int totalListeningSeconds;
+
     private final String summary;
 
     public WrappedStats(String topSong,
                         int topSongSeconds,
+                        String topSongArtist,
                         String topArtist,
                         int topArtistSeconds,
+                        String topArtistTopSong,
                         String favoriteGenre,
                         int favoriteGenreSeconds,
                         int totalListeningSeconds,
                         String summary) {
         this.topSong = topSong;
         this.topSongSeconds = topSongSeconds;
+        this.topSongArtist = topSongArtist;
         this.topArtist = topArtist;
         this.topArtistSeconds = topArtistSeconds;
+        this.topArtistTopSong = topArtistTopSong;
         this.favoriteGenre = favoriteGenre;
         this.favoriteGenreSeconds = favoriteGenreSeconds;
         this.totalListeningSeconds = totalListeningSeconds;
         this.summary = summary;
-    }
-
-    public static WrappedStats empty() {
-        return new WrappedStats(
-                "No listening data yet",
-                0,
-                "No listening data yet",
-                0,
-                "No listening data yet",
-                0,
-                0,
-                "Start playing songs to generate your Wrapped statistics."
-        );
     }
 
     public String getTopSong() {
@@ -53,12 +47,20 @@ public class WrappedStats {
         return topSongSeconds;
     }
 
+    public String getTopSongArtist() {
+        return topSongArtist;
+    }
+
     public String getTopArtist() {
         return topArtist;
     }
 
     public int getTopArtistSeconds() {
         return topArtistSeconds;
+    }
+
+    public String getTopArtistTopSong() {
+        return topArtistTopSong;
     }
 
     public String getFavoriteGenre() {
@@ -75,5 +77,20 @@ public class WrappedStats {
 
     public String getSummary() {
         return summary;
+    }
+
+    public static WrappedStats empty() {
+        return new WrappedStats(
+                "No listening data yet",
+                0,
+                "No listening data yet",
+                "No listening data yet",
+                0,
+                "No listening data yet",
+                "No listening data yet",
+                0,
+                0,
+                "No listening data yet. Play some songs to build your Wrapped."
+        );
     }
 }

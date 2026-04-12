@@ -1,4 +1,4 @@
-package com.example.tunevaultfx.musicplayer;
+package com.example.tunevaultfx.musicplayer.playback;
 
 import com.example.tunevaultfx.core.Song;
 import javafx.beans.property.*;

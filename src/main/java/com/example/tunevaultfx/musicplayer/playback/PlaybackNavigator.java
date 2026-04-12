@@ -1,4 +1,7 @@
-package com.example.tunevaultfx.musicplayer;
+package com.example.tunevaultfx.musicplayer.playback;
+
+import com.example.tunevaultfx.musicplayer.ListeningSessionTracker;
+import com.example.tunevaultfx.musicplayer.ShuffleManager;
 
 /**
  * Handles next/previous playback navigation logic,

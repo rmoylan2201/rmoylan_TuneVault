@@ -1,8 +1,14 @@
-package com.example.tunevaultfx.musicplayer;
+package com.example.tunevaultfx.musicplayer.controller;
 
 import com.example.tunevaultfx.core.Song;
 import com.example.tunevaultfx.db.ListeningEventDAO;
-import com.example.tunevaultfx.playlist.PlaylistService;
+import com.example.tunevaultfx.musicplayer.ListeningSessionTracker;
+import com.example.tunevaultfx.musicplayer.ShuffleManager;
+import com.example.tunevaultfx.musicplayer.playback.PlaybackLifecycleService;
+import com.example.tunevaultfx.musicplayer.playback.PlaybackNavigator;
+import com.example.tunevaultfx.musicplayer.playback.PlaybackQueue;
+import com.example.tunevaultfx.musicplayer.playback.PlaybackState;
+import com.example.tunevaultfx.playlist.service.PlaylistService;
 import com.example.tunevaultfx.session.SessionManager;
 import com.example.tunevaultfx.user.UserLibraryService;
 import javafx.animation.KeyFrame;

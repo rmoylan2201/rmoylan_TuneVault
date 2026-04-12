@@ -1,4 +1,4 @@
-package com.example.tunevaultfx.playlist;
+package com.example.tunevaultfx.playlist.cell;
 
 import com.example.tunevaultfx.core.Song;
 import javafx.geometry.Pos;
