@@ -62,27 +62,49 @@
                 </VBox>
 
                 <VBox fx:id="recentSection"
-                      spacing="14"
+                      spacing="18"
                       VBox.vgrow="ALWAYS"
                       style="-fx-background-color: #f8fafc; -fx-background-radius: 24; -fx-padding: 22;">
                     <children>
-                        <HBox alignment="CENTER_LEFT">
-                            <children>
-                                <Label text="Recent searches"
-                                       style="-fx-font-size: 24px; -fx-font-weight: bold; -fx-text-fill: #1e293b;" />
-                                <Region HBox.hgrow="ALWAYS" />
-                                <Button text="Clear All"
-                                        onAction="#handleClearRecentSearches"
-                                        prefWidth="110"
-                                        prefHeight="38"
-                                        style="-fx-background-color: #e2e8f0; -fx-text-fill: #334155; -fx-font-size: 13px; -fx-font-weight: bold; -fx-background-radius: 18;" />
-                            </children>
-                        </HBox>
 
-                        <ListView fx:id="recentSearchesListView"
-                                  VBox.vgrow="ALWAYS"
-                                  prefHeight="520"
-                                  style="-fx-background-radius: 12; -fx-border-radius: 12;" />
+                        <VBox spacing="12">
+                            <children>
+                                <HBox alignment="CENTER_LEFT">
+                                    <children>
+                                        <Label text="Suggested for you"
+                                               style="-fx-font-size: 24px; -fx-font-weight: bold; -fx-text-fill: #1e293b;" />
+                                    </children>
+                                </HBox>
+
+                                <ListView fx:id="suggestedSongsListView"
+                                          prefHeight="220"
+                                          maxHeight="220"
+                                          style="-fx-background-radius: 12; -fx-border-radius: 12;" />
+                            </children>
+                        </VBox>
+
+                        <VBox spacing="12" VBox.vgrow="ALWAYS">
+                            <children>
+                                <HBox alignment="CENTER_LEFT">
+                                    <children>
+                                        <Label text="Recent searches"
+                                               style="-fx-font-size: 24px; -fx-font-weight: bold; -fx-text-fill: #1e293b;" />
+                                        <Region HBox.hgrow="ALWAYS" />
+                                        <Button text="Clear All"
+                                                onAction="#handleClearRecentSearches"
+                                                prefWidth="110"
+                                                prefHeight="38"
+                                                style="-fx-background-color: #e2e8f0; -fx-text-fill: #334155; -fx-font-size: 13px; -fx-font-weight: bold; -fx-background-radius: 18;" />
+                                    </children>
+                                </HBox>
+
+                                <ListView fx:id="recentSearchesListView"
+                                          VBox.vgrow="ALWAYS"
+                                          prefHeight="280"
+                                          style="-fx-background-radius: 12; -fx-border-radius: 12;" />
+                            </children>
+                        </VBox>
+
                     </children>
                 </VBox>
 

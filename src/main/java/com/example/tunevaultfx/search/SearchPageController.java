@@ -4,6 +4,7 @@ import com.example.tunevaultfx.core.Song;
 import com.example.tunevaultfx.db.SongDAO;
 import com.example.tunevaultfx.musicplayer.controller.MusicPlayerController;
 import com.example.tunevaultfx.playlist.service.SongSearchService;
+import com.example.tunevaultfx.recommendation.RecommendationService;
 import com.example.tunevaultfx.session.SessionManager;
 import com.example.tunevaultfx.util.AlertUtil;
 import com.example.tunevaultfx.util.SceneUtil;
@@ -28,6 +29,7 @@ public class SearchPageController {
     @FXML private ListView<Song> songResultsListView;
     @FXML private ListView<String> artistResultsListView;
     @FXML private ListView<SearchRecentItem> recentSearchesListView;
+    @FXML private ListView<Song> suggestedSongsListView;
     @FXML private Label resultsSummaryLabel;
     @FXML private VBox recentSection;
     @FXML private HBox resultsSection;
@@ -38,6 +40,7 @@ public class SearchPageController {
 
     private final SongDAO songDAO = new SongDAO();
     private final SongSearchService songSearchService = new SongSearchService();
+    private final RecommendationService recommendationService = new RecommendationService();
     private final MusicPlayerController player = MusicPlayerController.getInstance();
 
     @FXML
@@ -51,13 +54,16 @@ public class SearchPageController {
         songResultsListView.setPlaceholder(new Label("No matching songs."));
         artistResultsListView.setPlaceholder(new Label("No matching artists."));
         recentSearchesListView.setPlaceholder(new Label("No recent searches yet."));
+        suggestedSongsListView.setPlaceholder(new Label("No suggestions yet."));
         resultsSummaryLabel.setText("Start typing to search.");
 
         setupSongCells();
         setupArtistCells();
         setupRecentCells();
+        setupSuggestedSongCells();
         setupListeners();
         setupDoubleClickActions();
+        loadSuggestedSongs();
         showRecentMode();
     }
 
@@ -70,8 +76,32 @@ public class SearchPageController {
         }
     }
 
+    private void loadSuggestedSongs() {
+        suggestedSongsListView.setItems(
+                recommendationService.getSuggestedSongsForUser(SessionManager.getCurrentUsername(), 12)
+        );
+    }
+
     private void setupSongCells() {
-        songResultsListView.setCellFactory(listView -> new ListCell<>() {
+        songResultsListView.setCellFactory(listView -> buildSongCell());
+    }
+
+    private void setupSuggestedSongCells() {
+        suggestedSongsListView.setCellFactory(listView -> buildSongCell());
+
+        suggestedSongsListView.setOnMouseClicked(event -> {
+            if (event.getClickCount() == 2) {
+                Song selectedSong = suggestedSongsListView.getSelectionModel().getSelectedItem();
+                if (selectedSong != null) {
+                    player.playSingleSong(selectedSong);
+                    SessionManager.addRecentSearch(SearchRecentItem.song(selectedSong));
+                }
+            }
+        });
+    }
+
+    private ListCell<Song> buildSongCell() {
+        return new ListCell<>() {
             @Override
             protected void updateItem(Song song, boolean empty) {
                 super.updateItem(song, empty);
@@ -99,7 +129,7 @@ public class SearchPageController {
                 setText(null);
                 setGraphic(box);
             }
-        });
+        };
     }
 
     private void setupArtistCells() {

@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<?import javafx.geometry.Insets?>
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
 
@@ -34,11 +33,9 @@
         <StackPane style="-fx-padding: 10 24 18 24;">
             <children>
 
-                <!-- Main two-column layout -->
                 <HBox spacing="24.0" alignment="TOP_LEFT">
                     <children>
 
-                        <!-- Left card -->
                         <VBox spacing="16.0"
                               minWidth="340.0"
                               prefWidth="340.0"
@@ -73,7 +70,6 @@
                             </children>
                         </VBox>
 
-                        <!-- Center card -->
                         <VBox spacing="16.0"
                               HBox.hgrow="ALWAYS"
                               minWidth="520.0"
@@ -114,13 +110,12 @@
                     </children>
                 </HBox>
 
-                <!-- Overlay search panel -->
                 <VBox fx:id="searchSongsPanel"
                       visible="false"
                       managed="false"
-                      maxWidth="330.0"
-                      minWidth="330.0"
-                      prefWidth="330.0"
+                      maxWidth="350.0"
+                      minWidth="350.0"
+                      prefWidth="350.0"
                       spacing="14.0"
                       StackPane.alignment="TOP_RIGHT"
                       translateX="-8.0"
@@ -139,7 +134,7 @@
                             </children>
                         </HBox>
 
-                        <Label text="Songs stay hidden until you type. Search by title, artist, album, or genre."
+                        <Label text="Suggested songs appear first for this playlist. Start typing to search by title, artist, album, or genre."
                                wrapText="true"
                                style="-fx-text-fill: #64748b; -fx-font-size: 14px;" />
 
