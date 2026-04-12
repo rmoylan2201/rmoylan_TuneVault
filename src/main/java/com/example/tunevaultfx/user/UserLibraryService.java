@@ -1,25 +1,15 @@
 package com.example.tunevaultfx.user;
 
 import com.example.tunevaultfx.core.Song;
+import com.example.tunevaultfx.playlist.service.PlaylistService;
 import com.example.tunevaultfx.session.SessionManager;
-import javafx.collections.ObservableList;
 
 /**
- * Handles current-user song actions like likes and playlist additions.
+ * Handles current-user song actions like liked-song checks.
  */
 public class UserLibraryService {
 
-    public void toggleLike(Song song) {
-        if (song == null) {
-            return;
-        }
-
-        UserProfile profile = SessionManager.getCurrentUserProfile();
-        if (profile != null) {
-            profile.toggleLike(song);
-            SessionManager.saveCurrentProfile();
-        }
-    }
+    private final PlaylistService playlistService = new PlaylistService();
 
     public boolean isLiked(Song song) {
         UserProfile profile = SessionManager.getCurrentUserProfile();
@@ -36,10 +26,6 @@ public class UserLibraryService {
             return;
         }
 
-        ObservableList<Song> playlist = profile.getPlaylists().get(playlistName);
-        if (playlist != null && !playlist.contains(song)) {
-            playlist.add(song);
-            SessionManager.saveCurrentProfile();
-        }
+        playlistService.addSongToPlaylist(profile, playlistName, song);
     }
 }

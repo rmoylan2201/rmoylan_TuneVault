@@ -19,6 +19,11 @@ public class MainMenuController {
     private Label welcomeLabel;
 
     @FXML
+    private void openSearchPage(ActionEvent event) throws IOException {
+        SceneUtil.switchScene((Node) event.getSource(), "search-page.fxml");
+    }
+
+    @FXML
     public void initialize() {
         String username = SessionManager.getCurrentUsername();
         welcomeLabel.setText(username != null ? "Welcome, " + username : "Welcome");

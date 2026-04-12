@@ -25,7 +25,7 @@ import java.io.IOException;
 public class MiniPlayerController {
 
     @FXML private Label miniSongLabel;
-    @FXML private Label miniArtistLabel;
+    @FXML private Hyperlink miniArtistLink;
     @FXML private Label miniTimeLabel;
 
     @FXML private Hyperlink miniPlaylistLink;
@@ -44,7 +44,7 @@ public class MiniPlayerController {
     @FXML
     public void initialize() {
         miniSongLabel.textProperty().bind(player.currentTitleProperty());
-        miniArtistLabel.textProperty().bind(player.currentArtistProperty());
+        miniArtistLink.textProperty().bind(player.currentArtistProperty());
 
         miniPlayPauseButton.textProperty().bind(
                 Bindings.when(player.playingProperty()).then("⏸").otherwise("▶")
@@ -97,6 +97,18 @@ public class MiniPlayerController {
         player.next();
         updateMiniLikeButton();
         updateMiniAddButton();
+    }
+
+    @FXML
+    private void handleOpenArtistProfile(ActionEvent event) throws IOException {
+        String artist = player.currentArtistProperty().get();
+
+        if (artist == null || artist.isBlank()) {
+            return;
+        }
+
+        SessionManager.setSelectedArtist(artist);
+        SceneUtil.switchScene((Node) event.getSource(), "artist-profile-page.fxml");
     }
 
     @FXML

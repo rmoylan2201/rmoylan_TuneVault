@@ -5,7 +5,10 @@ import com.example.tunevaultfx.user.UserProfile;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 
-import java.sql.*;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
@@ -27,21 +30,23 @@ public class UserProfileDAO {
         ensureLikedSongsPlaylistExists(userId);
 
         String sql = """
-                SELECT p.playlist_id,
-                       p.name AS playlist_name,
-                       p.is_system_playlist,
-                       s.song_id,
-                       s.title,
-                       COALESCE(a.name, '') AS artist_name,
-                       '' AS album_name,
-                       COALESCE(s.duration_seconds, 0) AS duration_seconds
-                FROM playlist p
-                LEFT JOIN playlist_song ps ON ps.playlist_id = p.playlist_id
-                LEFT JOIN song s ON s.song_id = ps.song_id
-                LEFT JOIN artist a ON a.artist_id = s.artist_id
-                WHERE p.user_id = ?
-                ORDER BY p.is_system_playlist DESC, p.playlist_id, ps.song_id
-                """;
+    SELECT p.playlist_id,
+           p.name AS playlist_name,
+           p.is_system_playlist,
+           s.song_id,
+           s.title,
+           COALESCE(a.name, '') AS artist_name,
+           '' AS album_name,
+           COALESCE(g.genre_name, '') AS genre_name,
+           COALESCE(s.duration_seconds, 0) AS duration_seconds
+    FROM playlist p
+    LEFT JOIN playlist_song ps ON ps.playlist_id = p.playlist_id
+    LEFT JOIN song s ON s.song_id = ps.song_id
+    LEFT JOIN artist a ON a.artist_id = s.artist_id
+    LEFT JOIN genre g ON g.genre_id = s.genre_id
+    WHERE p.user_id = ?
+    ORDER BY p.is_system_playlist DESC, p.playlist_id, ps.song_id
+""";
 
         Map<String, ObservableList<Song>> loadedPlaylists = new LinkedHashMap<>();
 
@@ -62,6 +67,7 @@ public class UserProfileDAO {
                                 rs.getString("title"),
                                 rs.getString("artist_name"),
                                 rs.getString("album_name"),
+                                rs.getString("genre_name"),
                                 rs.getInt("duration_seconds")
                         ));
                     }

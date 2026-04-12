@@ -42,6 +42,7 @@ public class PlaylistPickerService {
 
         ButtonType closeButtonType = new ButtonType("Done", ButtonBar.ButtonData.OK_DONE);
         dialog.getDialogPane().getButtonTypes().add(closeButtonType);
+        dialog.getDialogPane().setPrefWidth(420);
 
         List<String> playlistNames = new ArrayList<>(profile.getPlaylists().keySet());
         ListView<String> playlistListView = new ListView<>(FXCollections.observableArrayList(playlistNames));
@@ -51,12 +52,11 @@ public class PlaylistPickerService {
         playlistListView.setCellFactory(listView -> new PlaylistPickerCell(profile, song));
 
         dialog.getDialogPane().setContent(playlistListView);
-        dialog.getDialogPane().setPrefWidth(420);
         dialog.showAndWait();
     }
 
     private boolean songIsInPlaylist(UserProfile profile, String playlistName, Song song) {
-        var songs = profile.getPlaylists().get(playlistName);
+        List<Song> songs = profile.getPlaylists().get(playlistName);
         return songs != null && songs.contains(song);
     }
 
@@ -74,6 +74,7 @@ public class PlaylistPickerService {
             this.song = song;
 
             HBox.setHgrow(spacer, Priority.ALWAYS);
+
             root.setSpacing(12);
             root.setPadding(new Insets(8, 10, 8, 10));
             root.setStyle("-fx-background-color: transparent; -fx-background-radius: 14;");
@@ -97,7 +98,7 @@ public class PlaylistPickerService {
             });
 
             setOnMousePressed(event -> {
-                if (!isEmpty()) {
+                if (!isEmpty() && getListView() != null) {
                     getListView().getSelectionModel().clearSelection();
                     event.consume();
                 }
@@ -111,6 +112,7 @@ public class PlaylistPickerService {
             if (empty || playlistName == null) {
                 setText(null);
                 setGraphic(null);
+                setBackground(Background.EMPTY);
                 setStyle("-fx-background-color: transparent;");
                 return;
             }
@@ -129,30 +131,26 @@ public class PlaylistPickerService {
             super.updateSelected(false);
         }
 
-        private void playClickFlash(boolean added) {
-            Color flashColor = added ? Color.web("#dbeafe") : Color.web("#fee2e2");
-
-            root.setBackground(new Background(
-                    new BackgroundFill(flashColor, new CornerRadii(14), Insets.EMPTY)
-            ));
-
-            PauseTransition pause = new PauseTransition(Duration.millis(180));
-            pause.setOnFinished(e -> root.setBackground(Background.EMPTY));
-            pause.play();
-        }
-
         private void togglePlaylistMembership(String playlistName) {
             boolean wasInPlaylist = songIsInPlaylist(profile, playlistName, song);
+            boolean changed;
 
             if (wasInPlaylist) {
-                playlistService.removeSongFromPlaylist(profile, playlistName, song);
+                changed = playlistService.removeSongFromPlaylist(profile, playlistName, song);
             } else {
-                playlistService.addSongToPlaylist(profile, playlistName, song);
+                changed = playlistService.addSongToPlaylist(profile, playlistName, song);
             }
 
-            playClickFlash(!wasInPlaylist);
+            if (changed) {
+                playClickFlash(!wasInPlaylist);
+            }
+
             refreshActionButton(playlistName);
-            getListView().getSelectionModel().clearSelection();
+
+            if (getListView() != null) {
+                getListView().refresh();
+                getListView().getSelectionModel().clearSelection();
+            }
         }
 
         private void refreshActionButton(String playlistName) {
@@ -167,6 +165,18 @@ public class PlaylistPickerService {
                 togglePlaylistMembership(playlistName);
                 event.consume();
             });
+        }
+
+        private void playClickFlash(boolean added) {
+            Color flashColor = added ? Color.web("#dbeafe") : Color.web("#fee2e2");
+
+            root.setBackground(new Background(
+                    new BackgroundFill(flashColor, new CornerRadii(14), Insets.EMPTY)
+            ));
+
+            PauseTransition pause = new PauseTransition(Duration.millis(180));
+            pause.setOnFinished(e -> root.setBackground(Background.EMPTY));
+            pause.play();
         }
     }
 }

@@ -2,17 +2,24 @@ package com.example.tunevaultfx.musicplayer.controller;
 
 import com.example.tunevaultfx.core.Song;
 import com.example.tunevaultfx.playlist.service.PlaylistPickerService;
+import com.example.tunevaultfx.session.SessionManager;
+import com.example.tunevaultfx.util.SceneUtil;
 import javafx.animation.FadeTransition;
 import javafx.animation.ParallelTransition;
 import javafx.animation.TranslateTransition;
 import javafx.beans.binding.Bindings;
+import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
+import javafx.scene.Node;
 import javafx.scene.control.Button;
+import javafx.scene.control.Hyperlink;
 import javafx.scene.control.Label;
 import javafx.scene.control.Slider;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.util.Duration;
+
+import java.io.IOException;
 
 /**
  * Controls the expanded player overlay shown above the current page.
@@ -23,7 +30,7 @@ public class ExpandedPlayerController {
     @FXML private VBox playerCard;
 
     @FXML private Label titleLabel;
-    @FXML private Label artistLabel;
+    @FXML private Hyperlink artistLink;
     @FXML private Label albumLabel;
     @FXML private Label timeLabel;
 
@@ -48,7 +55,7 @@ public class ExpandedPlayerController {
         playerCard.setTranslateY(80);
 
         titleLabel.textProperty().bind(player.currentTitleProperty());
-        artistLabel.textProperty().bind(player.currentArtistProperty());
+        artistLink.textProperty().bind(player.currentArtistProperty());
 
         playPauseButton.textProperty().bind(
                 Bindings.when(player.playingProperty()).then("⏸").otherwise("▶")
@@ -122,6 +129,18 @@ public class ExpandedPlayerController {
         player.next();
         refreshLikeButton();
         refreshAddButton();
+    }
+
+    @FXML
+    private void handleOpenArtistProfile(ActionEvent event) throws IOException {
+        String artist = player.currentArtistProperty().get();
+
+        if (artist == null || artist.isBlank()) {
+            return;
+        }
+
+        SessionManager.setSelectedArtist(artist);
+        SceneUtil.switchScene((Node) event.getSource(), "artist-profile-page.fxml");
     }
 
     @FXML

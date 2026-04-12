@@ -22,9 +22,11 @@ public class SongDAO {
                        s.title,
                        COALESCE(a.name, '') AS artist_name,
                        '' AS album_name,
+                       COALESCE(g.genre_name, '') AS genre_name,
                        COALESCE(s.duration_seconds, 0) AS duration_seconds
                 FROM song s
                 LEFT JOIN artist a ON a.artist_id = s.artist_id
+                LEFT JOIN genre g ON g.genre_id = s.genre_id
                 ORDER BY s.title
                 """;
 
@@ -38,6 +40,7 @@ public class SongDAO {
                         rs.getString("title"),
                         rs.getString("artist_name"),
                         rs.getString("album_name"),
+                        rs.getString("genre_name"),
                         rs.getInt("duration_seconds")
                 ));
             }

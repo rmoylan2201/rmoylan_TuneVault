@@ -65,7 +65,7 @@ public class PlaylistsPageController {
 
         loadLibrarySongs();
 
-        searchResultsListView.setItems(allLibrarySongs);
+        searchResultsListView.setItems(FXCollections.observableArrayList());
         searchResultsListView.setFocusTraversable(false);
         searchResultsListView.getSelectionModel().clearSelection();
         playlistSongsListView.setFocusTraversable(false);
@@ -114,7 +114,14 @@ public class PlaylistsPageController {
 
         searchSongsField.textProperty()
                 .addListener((obs, oldVal, newVal) -> {
-                    searchResultsListView.setItems(songSearchService.filterSongs(allLibrarySongs, newVal));
+                    String query = newVal == null ? "" : newVal.trim();
+
+                    if (query.isEmpty()) {
+                        searchResultsListView.setItems(FXCollections.observableArrayList());
+                    } else {
+                        searchResultsListView.setItems(songSearchService.filterSongs(allLibrarySongs, query));
+                    }
+
                     refreshSearchResultsCellFactory();
                 });
     }
@@ -204,8 +211,9 @@ public class PlaylistsPageController {
 
         ObservableList<Song> songs = profile.getPlaylists().get(selectedPlaylist);
         if (songs != null && songs.contains(song)) {
-            playlistService.removeSongFromPlaylist(profile, selectedPlaylist, song);
-            player.onSongRemovedFromPlaylist(selectedPlaylist, song);
+            if (playlistService.removeSongFromPlaylist(profile, selectedPlaylist, song)) {
+                player.onSongRemovedFromPlaylist(selectedPlaylist, song);
+            }
         } else {
             playlistService.addSongToPlaylist(profile, selectedPlaylist, song);
         }
@@ -254,6 +262,8 @@ public class PlaylistsPageController {
 
         searchSongsPanel.setVisible(true);
         searchSongsPanel.setManaged(true);
+        searchSongsField.clear();
+        searchResultsListView.setItems(FXCollections.observableArrayList());
         searchSongsField.requestFocus();
         refreshSearchResultsCellFactory();
     }

@@ -18,6 +18,7 @@ import java.sql.SQLException;
 public class PlaylistService {
 
     private final UserProfileDAO userProfileDAO = new UserProfileDAO();
+    private final ListeningEventDAO listeningEventDAO = new ListeningEventDAO();
 
     public boolean createPlaylist(UserProfile profile, String name) {
         if (profile == null || name == null || name.isBlank()) {
@@ -75,6 +76,7 @@ public class PlaylistService {
             boolean added = userProfileDAO.addSongToPlaylist(profile.getUsername(), playlistName, song);
             if (added) {
                 playlistSongs.add(song);
+                listeningEventDAO.recordPlaylistAdd(profile.getUsername(), song);
             }
             return added;
         } catch (SQLException e) {
@@ -97,6 +99,7 @@ public class PlaylistService {
             boolean removed = userProfileDAO.removeSongFromPlaylist(profile.getUsername(), playlistName, song);
             if (removed) {
                 playlistSongs.remove(song);
+                listeningEventDAO.recordPlaylistRemove(profile.getUsername(), song);
             }
             return removed;
         } catch (SQLException e) {
@@ -117,8 +120,10 @@ public class PlaylistService {
             userProfileDAO.toggleLike(profile.getUsername(), song);
             profile.toggleLike(song);
 
-            if (!wasLiked) {
-                new ListeningEventDAO().recordLike(profile.getUsername(), song);
+            if (wasLiked) {
+                listeningEventDAO.recordUnlike(profile.getUsername(), song);
+            } else {
+                listeningEventDAO.recordLike(profile.getUsername(), song);
             }
         } catch (SQLException e) {
             e.printStackTrace();

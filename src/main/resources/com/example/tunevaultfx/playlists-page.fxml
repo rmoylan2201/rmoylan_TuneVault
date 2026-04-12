@@ -139,11 +139,12 @@
                             </children>
                         </HBox>
 
-                        <Label text="Search songs and click to add or remove"
+                        <Label text="Songs stay hidden until you type. Search by title, artist, album, or genre."
+                               wrapText="true"
                                style="-fx-text-fill: #64748b; -fx-font-size: 14px;" />
 
                         <TextField fx:id="searchSongsField"
-                                   promptText="Search by title, artist, or album"
+                                   promptText="Search by title, artist, album, or genre"
                                    prefHeight="42.0"
                                    style="-fx-background-radius: 10; -fx-border-radius: 10; -fx-border-color: #cbd5e1;" />
 
