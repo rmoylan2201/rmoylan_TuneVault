@@ -45,13 +45,13 @@
                        style="-fx-font-size: 12px; -fx-font-weight: bold; -fx-text-fill: #7c7c9e;" />
                 <VBox spacing="6">
                     <Label text="✓  At least 8 characters"
-                           style="-fx-font-size: 12px; -fx-text-fill: #6b6b8e;" />
+                           style="-fx-font-size: 12px; -fx-text-fill: #a0a0c0;" />
                     <Label text="✓  One uppercase letter"
-                           style="-fx-font-size: 12px; -fx-text-fill: #6b6b8e;" />
+                           style="-fx-font-size: 12px; -fx-text-fill: #a0a0c0;" />
                     <Label text="✓  One lowercase letter"
-                           style="-fx-font-size: 12px; -fx-text-fill: #6b6b8e;" />
+                           style="-fx-font-size: 12px; -fx-text-fill: #a0a0c0;" />
                     <Label text="✓  One number"
-                           style="-fx-font-size: 12px; -fx-text-fill: #6b6b8e;" />
+                           style="-fx-font-size: 12px; -fx-text-fill: #a0a0c0;" />
                 </VBox>
             </VBox>
 
@@ -71,14 +71,14 @@
                         <Label text="Create your account"
                                style="-fx-font-size: 28px; -fx-font-weight: bold; -fx-text-fill: #ffffff;" />
                         <Label text="It's free and takes under a minute"
-                               style="-fx-font-size: 13px; -fx-text-fill: #52525b;" />
+                               style="-fx-font-size: 13px; -fx-text-fill: #a0a0c0;" />
                     </VBox>
 
                     <VBox spacing="14">
 
                         <VBox spacing="6">
                             <Label text="USERNAME"
-                                   style="-fx-font-size: 11px; -fx-font-weight: bold; -fx-text-fill: #52525b;" />
+                                   style="-fx-font-size: 11px; -fx-font-weight: bold; -fx-text-fill: #a0a0c0;" />
                             <TextField fx:id="usernameField"
                                        promptText="3–30 characters, letters &amp; numbers"
                                        prefHeight="44" />
@@ -86,7 +86,7 @@
 
                         <VBox spacing="6">
                             <Label text="EMAIL"
-                                   style="-fx-font-size: 11px; -fx-font-weight: bold; -fx-text-fill: #52525b;" />
+                                   style="-fx-font-size: 11px; -fx-font-weight: bold; -fx-text-fill: #a0a0c0;" />
                             <TextField fx:id="emailField"
                                        promptText="you@example.com"
                                        prefHeight="44" />
@@ -94,7 +94,7 @@
 
                         <VBox spacing="6">
                             <Label text="PASSWORD"
-                                   style="-fx-font-size: 11px; -fx-font-weight: bold; -fx-text-fill: #52525b;" />
+                                   style="-fx-font-size: 11px; -fx-font-weight: bold; -fx-text-fill: #a0a0c0;" />
                             <PasswordField fx:id="passwordField"
                                            promptText="Create a strong password"
                                            prefHeight="44" />
@@ -102,7 +102,7 @@
 
                         <VBox spacing="6">
                             <Label text="CONFIRM PASSWORD"
-                                   style="-fx-font-size: 11px; -fx-font-weight: bold; -fx-text-fill: #52525b;" />
+                                   style="-fx-font-size: 11px; -fx-font-weight: bold; -fx-text-fill: #a0a0c0;" />
                             <PasswordField fx:id="confirmPasswordField"
                                            promptText="Repeat your password"
                                            prefHeight="44" />
@@ -113,6 +113,7 @@
                     <VBox spacing="10">
                         <Button text="Create Account"
                                 onAction="#handleCreateAccount"
+                                defaultButton="true"
                                 maxWidth="Infinity"
                                 prefHeight="46"
                                 style="-fx-background-color: #8b5cf6;
@@ -124,6 +125,7 @@
 
                         <Button text="← Back to Login"
                                 onAction="#handleBackToLogin"
+                                cancelButton="true"
                                 maxWidth="Infinity"
                                 prefHeight="42"
                                 style="-fx-background-color: rgba(255,255,255,0.06);

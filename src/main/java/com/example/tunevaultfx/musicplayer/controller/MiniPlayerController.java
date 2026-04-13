@@ -1,5 +1,6 @@
 package com.example.tunevaultfx.musicplayer.controller;
 
+import com.example.tunevaultfx.core.Song;
 import com.example.tunevaultfx.musicplayer.PlayerStyleConstants;
 import com.example.tunevaultfx.playlist.service.PlaylistPickerService;
 import com.example.tunevaultfx.session.SessionManager;
@@ -47,12 +48,15 @@ public class MiniPlayerController {
     private Button miniLoopButton;
     @FXML
     private Button miniAddButton;
+    @FXML
+    private Button miniQueueButton;
 
     @FXML
     private Slider miniProgressSlider;
 
     private final MusicPlayerController player = MusicPlayerController.getInstance();
     private final PlaylistPickerService addToPlaylistDialog = new PlaylistPickerService();
+    private QueuePanelController queuePanelController;
 
     // Size tokens for this controller's buttons (smaller than expanded player)
     private static final String FS = "17px";
@@ -87,12 +91,14 @@ public class MiniPlayerController {
         player.shuffleEnabledProperty().addListener((obs, o, n) -> refreshModeButtons());
         player.loopEnabledProperty().addListener((obs, o, n) -> refreshModeButtons());
         player.currentSongLikedProperty().addListener((obs, o, n) -> refreshLikeButton());
+        player.getUserQueue().addListener((javafx.collections.ListChangeListener<Song>) c -> refreshQueueButton());
 
         refreshLikeButton();
         refreshTime();
         refreshPlaylistLink();
         refreshModeButtons();
         refreshAddButton();
+        refreshQueueButton();
     }
 
     // ── Handlers ──────────────────────────────────────────────────
@@ -138,6 +144,14 @@ public class MiniPlayerController {
     private void handleMiniAddToPlaylist() {
         addToPlaylistDialog.show(player.getCurrentSong());
         refreshAddButton();
+    }
+
+    @FXML
+    private void handleOpenQueue() {
+        ensureQueuePanelAttached(miniQueueButton);
+        if (queuePanelController != null) {
+            queuePanelController.visibleProperty().set(true);
+        }
     }
 
     @FXML
@@ -208,6 +222,58 @@ public class MiniPlayerController {
         miniProgressSlider.setMax(Math.max(total, 1));
         miniProgressSlider.setValue(current);
         miniTimeLabel.setText(formatTime(current) + " / " + formatTime(total));
+    }
+
+    // ── Queue panel overlay ──────────────────────────────────────────
+
+    private void ensureQueuePanelAttached(Node source) {
+        Scene scene = source.getScene();
+        if (scene == null) return;
+
+        Parent root = scene.getRoot();
+        if (root.lookup("#queuePanelOverlay") != null) {
+            return;
+        }
+
+        try {
+            FXMLLoader loader = new FXMLLoader(
+                    getClass().getResource("/com/example/tunevaultfx/queue-panel.fxml"));
+            Parent overlay = loader.load();
+            queuePanelController = loader.getController();
+
+            if (root instanceof StackPane sp) {
+                sp.getChildren().add(overlay);
+            } else {
+                StackPane wrapper = new StackPane();
+                wrapper.getChildren().addAll(root, overlay);
+                scene.setRoot(wrapper);
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void refreshQueueButton() {
+        int size = player.getUserQueueSize();
+        if (size > 0) {
+            miniQueueButton.setText("☰ " + size);
+            miniQueueButton.setStyle(
+                    "-fx-background-color: rgba(139,92,246,0.12);"
+                            + "-fx-text-fill: #a78bfa;"
+                            + "-fx-font-size: 14px;"
+                            + "-fx-font-weight: bold;"
+                            + "-fx-background-radius: 19;"
+                            + "-fx-border-color: rgba(139,92,246,0.2);"
+                            + "-fx-border-radius: 19;"
+                            + "-fx-border-width: 1;");
+        } else {
+            miniQueueButton.setText("☰");
+            miniQueueButton.setStyle(
+                    "-fx-background-color: transparent;"
+                            + "-fx-text-fill: #58586e;"
+                            + "-fx-font-size: 17px;"
+                            + "-fx-background-radius: 19;");
+        }
     }
 
     // ── Expanded player overlay ────────────────────────────────────

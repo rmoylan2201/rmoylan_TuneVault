@@ -1,11 +1,14 @@
 package com.example.tunevaultfx.findyourgenre;
 
 import com.example.tunevaultfx.util.SceneUtil;
+import com.example.tunevaultfx.util.UiMotionUtil;
+import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.Node;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
+import javafx.scene.layout.VBox;
 
 import java.io.IOException;
 import java.util.HashMap;
@@ -31,6 +34,8 @@ public class FindYourGenrePageController {
     @FXML private Button answerButton3;
     @FXML private Button answerButton4;
     @FXML private Button restartButton;
+    @FXML private VBox quizContainer;
+    @FXML private VBox quizCard;
 
     private final List<GenreQuiz.Question> questions = GenreQuiz.getQuestions();
     private final Map<String, Integer>     scores    = new HashMap<>();
@@ -41,6 +46,22 @@ public class FindYourGenrePageController {
     @FXML
     public void initialize() {
         resetQuiz();
+
+        Platform.runLater(() -> {
+            UiMotionUtil.playStaggeredEntrance(List.of(quizCard));
+            UiMotionUtil.applyHoverLift(quizCard);
+        });
+
+        quizContainer.sceneProperty().addListener((obs, oldScene, newScene) -> {
+            if (newScene == null) return;
+            applyResponsiveDensity(newScene.getWidth());
+            newScene.widthProperty().addListener((o, oldW, newW) -> applyResponsiveDensity(newW.doubleValue()));
+        });
+    }
+
+    private void applyResponsiveDensity(double width) {
+        boolean compact = width < 1300;
+        quizCard.setPrefWidth(compact ? 680 : 760);
     }
 
     // ── Answer handlers ───────────────────────────────────────────

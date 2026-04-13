@@ -57,6 +57,8 @@ public class MusicPlayerController {
     private int autoplaySuggestionIndex = -1;
     private boolean playingAutoplaySuggestions = false;
 
+    private final ObservableList<Song> userQueue = FXCollections.observableArrayList();
+
     private MusicPlayerController() {
         PlaybackLifecycleService.PlayerRuntime lifecycleRuntime = new PlaybackLifecycleService.PlayerRuntime() {
             @Override
@@ -115,6 +117,9 @@ public class MusicPlayerController {
 
         timeline = new Timeline(new KeyFrame(Duration.seconds(1), e -> tick()));
         timeline.setCycleCount(Timeline.INDEFINITE);
+
+        // Keep liked-state UI in sync whenever the currently playing song changes.
+        state.currentSongProperty().addListener((obs, oldSong, newSong) -> refreshCurrentSongLiked());
     }
 
     public void playQueue(ObservableList<Song> songs, int index) {
@@ -149,6 +154,11 @@ public class MusicPlayerController {
     }
 
     public void next() {
+        if (!userQueue.isEmpty()) {
+            playNextFromUserQueue();
+            return;
+        }
+
         if (playingAutoplaySuggestions) {
             playNextAutoplaySuggestion();
             return;
@@ -254,6 +264,7 @@ public class MusicPlayerController {
         autoplaySuggestions.clear();
         autoplaySuggestionIndex = -1;
         playingAutoplaySuggestions = false;
+        userQueue.clear();
 
         currentSongLiked.set(false);
         expandedPlayerVisible.set(false);
@@ -321,15 +332,34 @@ public class MusicPlayerController {
         expandedPlayerVisible.set(visible);
     }
 
+    private void playNextFromUserQueue() {
+        Song next = userQueue.remove(0);
+        playingAutoplaySuggestions = false;
+        autoplaySuggestions.clear();
+        autoplaySuggestionIndex = -1;
+        lifecycleService.playSingleSong(next);
+    }
+
     private void startAutoplaySuggestions() {
+        ObservableList<Song> source = activePlaylistSongs.isEmpty()
+                ? (state.getCurrentSong() != null
+                    ? FXCollections.observableArrayList(state.getCurrentSong())
+                    : FXCollections.observableArrayList())
+                : activePlaylistSongs;
+
+        if (source.isEmpty()) {
+            fetchGlobalRecommendations();
+            return;
+        }
+
         ObservableList<Song> suggestions = recommendationService.getSuggestedSongsForPlaylist(
                 SessionManager.getCurrentUsername(),
-                activePlaylistSongs,
-                4
+                source,
+                8
         );
 
         if (suggestions.isEmpty()) {
-            stop();
+            fetchGlobalRecommendations();
             return;
         }
 
@@ -339,9 +369,24 @@ public class MusicPlayerController {
         lifecycleService.playSingleSong(autoplaySuggestions.get(0));
     }
 
+    private void fetchGlobalRecommendations() {
+        ObservableList<Song> global = recommendationService.getSuggestedSongsForUser(
+                SessionManager.getCurrentUsername(), 10);
+
+        if (global.isEmpty()) {
+            stop();
+            return;
+        }
+
+        autoplaySuggestions = FXCollections.observableArrayList(global);
+        autoplaySuggestionIndex = 0;
+        playingAutoplaySuggestions = true;
+        lifecycleService.playSingleSong(autoplaySuggestions.get(0));
+    }
+
     private void playNextAutoplaySuggestion() {
         if (autoplaySuggestions.isEmpty()) {
-            stop();
+            startAutoplaySuggestions();
             return;
         }
 
@@ -349,8 +394,67 @@ public class MusicPlayerController {
             autoplaySuggestionIndex++;
             lifecycleService.playSingleSong(autoplaySuggestions.get(autoplaySuggestionIndex));
         } else {
-            stop();
+            startAutoplaySuggestions();
         }
+    }
+
+    // ── User queue management ─────────────────────────────────────
+
+    public ObservableList<Song> getUserQueue() {
+        return userQueue;
+    }
+
+    public void addToQueue(Song song) {
+        if (song != null) {
+            userQueue.add(song);
+        }
+    }
+
+    public void addToQueueNext(Song song) {
+        if (song != null) {
+            userQueue.add(0, song);
+        }
+    }
+
+    public void removeFromQueue(int index) {
+        if (index >= 0 && index < userQueue.size()) {
+            userQueue.remove(index);
+        }
+    }
+
+    public void moveInQueue(int fromIndex, int toIndex) {
+        if (fromIndex < 0 || fromIndex >= userQueue.size()) return;
+        if (toIndex < 0 || toIndex >= userQueue.size()) return;
+        Song song = userQueue.remove(fromIndex);
+        userQueue.add(toIndex, song);
+    }
+
+    public void clearUserQueue() {
+        userQueue.clear();
+    }
+
+    public ObservableList<Song> getUpcomingQueueSnapshot() {
+        ObservableList<Song> upcoming = FXCollections.observableArrayList();
+
+        upcoming.addAll(userQueue);
+
+        if (!activePlaylistSongs.isEmpty() && activePlaylistIndex >= 0) {
+            for (int i = activePlaylistIndex + 1; i < activePlaylistSongs.size(); i++) {
+                upcoming.add(activePlaylistSongs.get(i));
+            }
+        }
+
+        if (playingAutoplaySuggestions) {
+            for (int i = autoplaySuggestionIndex + 1; i < autoplaySuggestions.size(); i++) {
+                upcoming.add(autoplaySuggestions.get(i));
+            }
+        }
+
+        return upcoming;
+    }
+
+    public int getUserQueueSize() {
+        return userQueue.size();
     }
 
     private void setPlaying(boolean value) {
@@ -413,6 +517,10 @@ public class MusicPlayerController {
 
     public BooleanProperty playingProperty() {
         return state.playingProperty();
+    }
+
+    public boolean isPlaying() {
+        return state.isPlaying();
     }
 
     public StringProperty currentTitleProperty() {

@@ -51,7 +51,10 @@
 
     <!-- ── CENTER: Feature grid ────────────────────────────────── -->
     <center>
-        <VBox alignment="CENTER" spacing="22"
+        <ScrollPane fitToWidth="true" hbarPolicy="NEVER" vbarPolicy="AS_NEEDED"
+                    style="-fx-background: transparent; -fx-background-color: transparent;">
+            <content>
+        <VBox fx:id="menuContent" alignment="CENTER" spacing="22"
               style="-fx-padding: 24 40 24 40;">
 
             <VBox alignment="CENTER" spacing="6">
@@ -62,7 +65,7 @@
             </VBox>
 
             <!-- 2×2 grid -->
-            <GridPane hgap="18" vgap="18" alignment="CENTER">
+            <GridPane fx:id="featureGrid" hgap="18" vgap="18" alignment="CENTER">
                 <columnConstraints>
                     <ColumnConstraints prefWidth="576" />
                     <ColumnConstraints prefWidth="576" />
@@ -74,7 +77,7 @@
                 <children>
 
                     <!-- ▸ SEARCH ────────────────────────────────── -->
-                    <VBox GridPane.columnIndex="0" GridPane.rowIndex="0"
+                    <VBox fx:id="searchCard" GridPane.columnIndex="0" GridPane.rowIndex="0"
                           spacing="0"
                           style="-fx-background-color: #0f0f1e;
                                  -fx-background-radius: 22;
@@ -110,7 +113,7 @@
                     </VBox>
 
                     <!-- ▸ PLAYLISTS ──────────────────────────────── -->
-                    <VBox GridPane.columnIndex="1" GridPane.rowIndex="0"
+                    <VBox fx:id="playlistsCard" GridPane.columnIndex="1" GridPane.rowIndex="0"
                           spacing="0"
                           style="-fx-background-color: #0f0f1e;
                                  -fx-background-radius: 22;
@@ -146,7 +149,7 @@
                     </VBox>
 
                     <!-- ▸ WRAPPED ────────────────────────────────── -->
-                    <VBox GridPane.columnIndex="0" GridPane.rowIndex="1"
+                    <VBox fx:id="wrappedCard" GridPane.columnIndex="0" GridPane.rowIndex="1"
                           spacing="0"
                           style="-fx-background-color: #0f0f1e;
                                  -fx-background-radius: 22;
@@ -182,7 +185,7 @@
                     </VBox>
 
                     <!-- ▸ FIND YOUR GENRE ───────────────────────── -->
-                    <VBox GridPane.columnIndex="1" GridPane.rowIndex="1"
+                    <VBox fx:id="genreCard" GridPane.columnIndex="1" GridPane.rowIndex="1"
                           spacing="0"
                           style="-fx-background-color: #0f0f1e;
                                  -fx-background-radius: 22;
@@ -220,6 +223,8 @@
                 </children>
             </GridPane>
         </VBox>
+            </content>
+        </ScrollPane>
     </center>
 
     <bottom>

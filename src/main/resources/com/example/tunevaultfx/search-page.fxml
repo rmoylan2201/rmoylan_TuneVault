@@ -45,7 +45,7 @@
         <VBox spacing="0" style="-fx-padding: 16 32 0 32;">
 
             <!-- Search bar card (always visible) -->
-            <VBox spacing="10"
+            <VBox fx:id="searchInputCard" spacing="10"
                   style="-fx-background-color: #14141e;
                          -fx-background-radius: 22;
                          -fx-border-color: rgba(255,255,255,0.08);
@@ -67,7 +67,7 @@
                             onAction="#handleClearSearch"
                             prefWidth="96" prefHeight="46"
                             style="-fx-background-color: rgba(255,255,255,0.07);
-                                   -fx-text-fill: #52525b;
+                                   -fx-text-fill: #a0a0c0;
                                    -fx-font-size: 13px;
                                    -fx-font-weight: bold;
                                    -fx-background-radius: 13;
@@ -78,7 +78,7 @@
 
                 <Label fx:id="resultsSummaryLabel"
                        text=""
-                       style="-fx-text-fill: #3d3d5c; -fx-font-size: 13px;" />
+                       style="-fx-text-fill: #8a8ab0; -fx-font-size: 13px;" />
             </VBox>
 
             <Region prefHeight="16" />
@@ -102,7 +102,7 @@
                             onAction="#handleClearRecentSearches"
                             prefHeight="32"
                             style="-fx-background-color: rgba(255,255,255,0.06);
-                                   -fx-text-fill: #52525b;
+                                   -fx-text-fill: #a0a0c0;
                                    -fx-font-size: 12px;
                                    -fx-font-weight: bold;
                                    -fx-background-radius: 12;

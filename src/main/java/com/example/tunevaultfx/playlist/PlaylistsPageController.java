@@ -15,6 +15,7 @@ import com.example.tunevaultfx.session.SessionManager;
 import com.example.tunevaultfx.user.UserProfile;
 import com.example.tunevaultfx.util.AlertUtil;
 import com.example.tunevaultfx.util.SceneUtil;
+import com.example.tunevaultfx.util.UiMotionUtil;
 import javafx.application.Platform;
 import javafx.collections.ListChangeListener;
 import javafx.collections.FXCollections;
@@ -24,9 +25,12 @@ import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Node;
 import javafx.scene.control.*;
+import javafx.scene.input.KeyCode;
+import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.*;
 
 import java.io.IOException;
+import java.util.List;
 import java.util.Optional;
 
 /**
@@ -68,6 +72,12 @@ public class PlaylistsPageController {
     private VBox searchSongsPanel;
     @FXML
     private VBox suggestionsSection;
+    @FXML
+    private VBox playlistSidebarCard;
+    @FXML
+    private VBox playlistSongsCard;
+    @FXML
+    private HBox contentRow;
 
     // ── Services ──────────────────────────────────────────────────
     private final ObservableList<String> playlistNames = FXCollections.observableArrayList();
@@ -121,6 +131,21 @@ public class PlaylistsPageController {
             updateSelectedPlaylist();
             attachPlaylistSongsListener();
             refreshSuggestions();
+
+            UiMotionUtil.playStaggeredEntrance(List.of(playlistSidebarCard, playlistSongsCard));
+            UiMotionUtil.applyHoverLift(playlistSidebarCard);
+            UiMotionUtil.applyHoverLift(playlistSongsCard);
+
+            if (contentRow.getScene() != null) {
+                applyResponsiveDensity(contentRow.getScene().getWidth());
+            }
+        });
+
+        contentRow.sceneProperty().addListener((obs, oldScene, newScene) -> {
+            if (newScene == null) return;
+            applyResponsiveDensity(newScene.getWidth());
+            newScene.widthProperty().addListener((o, oldW, newW) -> applyResponsiveDensity(newW.doubleValue()));
+            installKeyboardShortcuts();
         });
     }
 
@@ -175,7 +200,16 @@ public class PlaylistsPageController {
                 Label nameLbl = new Label(name);
                 nameLbl.setStyle("-fx-font-size: 13px; -fx-text-fill: #e2e8f0;");
 
-                HBox row = new HBox(10, icon, nameLbl);
+                Region spacer = new Region();
+                HBox.setHgrow(spacer, Priority.ALWAYS);
+
+                Label playingBadge = new Label("||");
+                boolean activeSource = isActiveSourcePlaylist(name);
+                playingBadge.setVisible(activeSource);
+                playingBadge.setManaged(activeSource);
+                playingBadge.setStyle("-fx-font-size: 11px; -fx-font-weight: bold; -fx-text-fill: #a78bfa;");
+
+                HBox row = new HBox(10, icon, nameLbl, spacer, playingBadge);
                 row.setAlignment(Pos.CENTER_LEFT);
                 row.setPadding(new Insets(9, 12, 9, 12));
                 row.setStyle("-fx-background-color: transparent; -fx-background-radius: 12;");
@@ -243,6 +277,19 @@ public class PlaylistsPageController {
         // the playlist listener handles it. For all other playlists this covers it.
         player.currentSongLikedProperty().addListener((obs, o, n) ->
                 Platform.runLater(this::refreshSuggestions));
+
+        player.currentSongProperty().addListener((obs, o, n) -> Platform.runLater(() -> {
+            playlistListView.refresh();
+            playlistSongsListView.refresh();
+        }));
+        player.playingProperty().addListener((obs, o, n) -> Platform.runLater(() -> {
+            playlistListView.refresh();
+            playlistSongsListView.refresh();
+        }));
+        player.currentSourcePlaylistNameProperty().addListener((obs, o, n) -> Platform.runLater(() -> {
+            playlistListView.refresh();
+            playlistSongsListView.refresh();
+        }));
     }
 
     /**
@@ -517,7 +564,42 @@ public class PlaylistsPageController {
         PlaylistSummary summary = selectionService.buildSummary(profile, selected);
         selectedPlaylistLabel.setText(summary.getPlaylistName());
         playlistSongsListView.setItems(summary.getSongs());
+        playlistSongsListView.getSelectionModel().clearSelection();
         songCountLabel.setText("Songs: " + summary.getSongCount());
         totalDurationLabel.setText("Duration: " + summary.getFormattedDuration());
+    }
+
+    private void applyResponsiveDensity(double width) {
+        boolean compact = width < 1420;
+        contentRow.setSpacing(compact ? 14 : 20);
+        playlistSidebarCard.setPrefWidth(compact ? 250 : 280);
+    }
+
+    private void installKeyboardShortcuts() {
+        if (contentRow.getScene() == null) {
+            return;
+        }
+
+        if (contentRow.getScene().getProperties().containsKey("playlistEscHandlerInstalled")) {
+            return;
+        }
+
+        contentRow.getScene().addEventFilter(KeyEvent.KEY_PRESSED, event -> {
+            if (event.getCode() == KeyCode.ESCAPE && searchSongsPanel.isVisible()) {
+                hideSearchPanel();
+                event.consume();
+            }
+        });
+        contentRow.getScene().getProperties().put("playlistEscHandlerInstalled", true);
+    }
+
+    private boolean isActiveSourcePlaylist(String playlistName) {
+        if (playlistName == null || playlistName.isBlank()) {
+            return false;
+        }
+        if (player.getCurrentSong() == null || !player.isPlaying()) {
+            return false;
+        }
+        return playlistName.equals(player.getCurrentSourcePlaylistName());
     }
 }
