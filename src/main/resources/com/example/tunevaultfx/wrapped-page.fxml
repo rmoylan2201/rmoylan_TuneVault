@@ -36,7 +36,7 @@
         <ScrollPane fitToWidth="true" hbarPolicy="NEVER" vbarPolicy="AS_NEEDED"
                     style="-fx-background: transparent; -fx-background-color: transparent;">
             <content>
-                <VBox spacing="18" style="-fx-padding: 22 32 28 32;">
+                <VBox fx:id="wrappedContent" spacing="18" style="-fx-padding: 22 32 28 32;">
 
                     <!-- Header: title + range toggle -->
                     <HBox alignment="CENTER_LEFT" spacing="16">
@@ -64,7 +64,7 @@
                     </HBox>
 
                     <!-- 2×2 stats grid -->
-                    <GridPane hgap="16" vgap="16">
+                    <GridPane fx:id="statsGrid" hgap="16" vgap="16">
                         <columnConstraints>
                             <ColumnConstraints percentWidth="50" />
                             <ColumnConstraints percentWidth="50" />
@@ -72,7 +72,7 @@
                         <children>
 
                             <!-- Top Song -->
-                            <VBox spacing="12"
+                            <VBox fx:id="topSongCard" spacing="12"
                                   style="-fx-background-color: #0f0f1e;
                                          -fx-background-radius: 22;
                                          -fx-border-color: rgba(139,92,246,0.18);
@@ -100,7 +100,7 @@
                             </VBox>
 
                             <!-- Top Artist -->
-                            <VBox spacing="12"
+                            <VBox fx:id="topArtistCard" spacing="12"
                                   style="-fx-background-color: #0f0f1e;
                                          -fx-background-radius: 22;
                                          -fx-border-color: rgba(244,63,94,0.18);
@@ -128,7 +128,7 @@
                             </VBox>
 
                             <!-- Favorite Genre -->
-                            <VBox spacing="12"
+                            <VBox fx:id="genreCard" spacing="12"
                                   style="-fx-background-color: #0f0f1e;
                                          -fx-background-radius: 22;
                                          -fx-border-color: rgba(20,184,166,0.18);
@@ -153,7 +153,7 @@
                             </VBox>
 
                             <!-- Total Listening Time — accent card -->
-                            <VBox spacing="10" alignment="CENTER_LEFT"
+                            <VBox fx:id="timeCard" spacing="10" alignment="CENTER_LEFT"
                                   style="-fx-background-color: linear-gradient(to bottom right, #1a0b3c, #0f0f1e);
                                          -fx-background-radius: 22;
                                          -fx-border-color: rgba(139,92,246,0.3);
@@ -182,7 +182,7 @@
                     </GridPane>
 
                     <!-- Summary card -->
-                    <VBox spacing="14"
+                    <VBox fx:id="summaryCard" spacing="14"
                           style="-fx-background-color: #0f0f1e;
                                  -fx-background-radius: 22;
                                  -fx-border-color: rgba(255,255,255,0.08);

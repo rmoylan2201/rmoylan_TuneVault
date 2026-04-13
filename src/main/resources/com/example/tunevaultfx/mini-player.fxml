@@ -12,9 +12,9 @@
 
   Key contrast fixes:
     - Song title: #f2f2fa (was implicit white, now explicit)
-    - Artist/playlist links: #a0a0c0 (was #52525b — now clearly readable)
-    - Time label: #a0a0c0 (was #3d3d5c — now readable)
-    - Shuffle/loop inactive: text now #6868885 not #3d3d5c
+    - Artist/playlist links: #a0a0c0 (was #a0a0c0 — now clearly readable)
+    - Time label: #a0a0c0 (was #8a8ab0 — now readable)
+    - Shuffle/loop inactive: text now #6868885 not #8a8ab0
 -->
 <VBox xmlns="http://javafx.com/javafx/21"
       xmlns:fx="http://javafx.com/fxml/1"
@@ -154,6 +154,16 @@
                         style="-fx-background-color: transparent;
                                -fx-text-fill: #58586e;
                                -fx-font-size: 20px;
+                               -fx-background-radius: 19;" />
+
+                <!-- Queue -->
+                <Button fx:id="miniQueueButton"
+                        text="☰"
+                        onAction="#handleOpenQueue"
+                        prefWidth="60" prefHeight="38"
+                        style="-fx-background-color: transparent;
+                               -fx-text-fill: #58586e;
+                               -fx-font-size: 17px;
                                -fx-background-radius: 19;" />
 
             </HBox>

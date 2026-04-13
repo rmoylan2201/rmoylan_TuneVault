@@ -2,12 +2,15 @@ package com.example.tunevaultfx.auth;
 
 import com.example.tunevaultfx.db.UserDAO;
 import com.example.tunevaultfx.util.SceneUtil;
+import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.Node;
 import javafx.scene.control.Label;
 import javafx.scene.control.PasswordField;
 import javafx.scene.control.TextField;
+import javafx.scene.input.KeyCode;
+import javafx.scene.input.KeyEvent;
 
 import java.io.IOException;
 import java.sql.SQLException;
@@ -28,6 +31,33 @@ public class ForgotPasswordPageController {
     @FXML private Label statusLabel;
 
     private final UserDAO userDAO = new UserDAO();
+
+    @FXML
+    public void initialize() {
+        Platform.runLater(() -> emailField.requestFocus());
+
+        emailField.sceneProperty().addListener((obs, oldScene, newScene) -> {
+            if (newScene == null || newScene.getProperties().containsKey("forgotPasswordHandlersInstalled")) {
+                return;
+            }
+
+            newScene.addEventFilter(KeyEvent.KEY_PRESSED, event -> {
+                if (event.getCode() == KeyCode.ENTER) {
+                    handleSubmit(new ActionEvent(emailField, emailField));
+                    event.consume();
+                } else if (event.getCode() == KeyCode.ESCAPE) {
+                    emailField.clear();
+                    newPasswordField.clear();
+                    confirmPasswordField.clear();
+                    clearStatus();
+                    emailField.requestFocus();
+                    event.consume();
+                }
+            });
+
+            newScene.getProperties().put("forgotPasswordHandlersInstalled", true);
+        });
+    }
 
     @FXML
     private void handleSubmit(ActionEvent event) {

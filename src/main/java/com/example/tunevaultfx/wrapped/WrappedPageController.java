@@ -2,12 +2,18 @@ package com.example.tunevaultfx.wrapped;
 
 import com.example.tunevaultfx.session.SessionManager;
 import com.example.tunevaultfx.util.SceneUtil;
+import com.example.tunevaultfx.util.UiMotionUtil;
+import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.Node;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.ProgressBar;
+import javafx.scene.layout.GridPane;
+import javafx.scene.layout.VBox;
+
+import java.util.List;
 
 import java.io.IOException;
 
@@ -54,6 +60,13 @@ public class WrappedPageController {
 
     @FXML
     private Button overallButton;
+    @FXML private VBox wrappedContent;
+    @FXML private GridPane statsGrid;
+    @FXML private VBox topSongCard;
+    @FXML private VBox topArtistCard;
+    @FXML private VBox genreCard;
+    @FXML private VBox timeCard;
+    @FXML private VBox summaryCard;
 
     private final WrappedStatsService wrappedStatsService = new WrappedStatsService();
     private StatsRange currentRange = StatsRange.DAILY;
@@ -62,6 +75,28 @@ public class WrappedPageController {
     public void initialize() {
         loadStats(currentRange);
         updateRangeButtons();
+
+        Platform.runLater(() -> {
+            UiMotionUtil.playStaggeredEntrance(List.of(topSongCard, topArtistCard, genreCard, timeCard, summaryCard));
+            UiMotionUtil.applyHoverLift(topSongCard);
+            UiMotionUtil.applyHoverLift(topArtistCard);
+            UiMotionUtil.applyHoverLift(genreCard);
+            UiMotionUtil.applyHoverLift(timeCard);
+            UiMotionUtil.applyHoverLift(summaryCard);
+        });
+
+        wrappedContent.sceneProperty().addListener((obs, oldScene, newScene) -> {
+            if (newScene == null) return;
+            applyResponsiveDensity(newScene.getWidth());
+            newScene.widthProperty().addListener((o, oldW, newW) -> applyResponsiveDensity(newW.doubleValue()));
+        });
+    }
+
+    private void applyResponsiveDensity(double width) {
+        boolean compact = width < 1400;
+        statsGrid.setHgap(compact ? 12 : 16);
+        statsGrid.setVgap(compact ? 12 : 16);
+        wrappedContent.setSpacing(compact ? 14 : 18);
     }
 
     @FXML

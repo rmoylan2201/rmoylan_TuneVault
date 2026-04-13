@@ -2,12 +2,15 @@ package com.example.tunevaultfx.auth;
 
 import com.example.tunevaultfx.db.UserDAO;
 import com.example.tunevaultfx.util.SceneUtil;
+import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.Node;
 import javafx.scene.control.Label;
 import javafx.scene.control.PasswordField;
 import javafx.scene.control.TextField;
+import javafx.scene.input.KeyCode;
+import javafx.scene.input.KeyEvent;
 
 import java.io.IOException;
 import java.sql.SQLException;
@@ -29,6 +32,38 @@ public class CreateAccountPageController {
     @FXML private Label statusLabel;
 
     private final UserDAO userDAO = new UserDAO();
+
+    @FXML
+    public void initialize() {
+        Platform.runLater(() -> usernameField.requestFocus());
+
+        usernameField.sceneProperty().addListener((obs, oldScene, newScene) -> {
+            if (newScene == null || newScene.getProperties().containsKey("createAccountHandlersInstalled")) {
+                return;
+            }
+
+            newScene.addEventFilter(KeyEvent.KEY_PRESSED, event -> {
+                if (event.getCode() == KeyCode.ENTER) {
+                    try {
+                        handleCreateAccount(new ActionEvent(usernameField, usernameField));
+                    } catch (IOException e) {
+                        showError("Unable to open the next page.");
+                    }
+                    event.consume();
+                } else if (event.getCode() == KeyCode.ESCAPE) {
+                    usernameField.clear();
+                    emailField.clear();
+                    passwordField.clear();
+                    confirmPasswordField.clear();
+                    clearStatus();
+                    usernameField.requestFocus();
+                    event.consume();
+                }
+            });
+
+            newScene.getProperties().put("createAccountHandlersInstalled", true);
+        });
+    }
 
     @FXML
     private void handleCreateAccount(ActionEvent event) throws IOException {

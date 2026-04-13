@@ -127,8 +127,7 @@ public class PlayableSongCell extends ListCell<Song> {
         // Row hover
         row.setOnMouseEntered(e -> {
             Song s = getItem();
-            boolean isPlaying = s != null && player.getCurrentSong() != null
-                    && player.getCurrentSong().songId() == s.songId();
+            boolean isPlaying = isCurrentTrackInThisPlaylist(s);
             if (!isPlaying) {
                 row.setStyle(CellStyleKit.ROW_HOVER);
                 playButton.setStyle(PLAY_HOVER);
@@ -137,8 +136,7 @@ public class PlayableSongCell extends ListCell<Song> {
         });
         row.setOnMouseExited(e -> {
             Song s = getItem();
-            boolean isPlaying = s != null && player.getCurrentSong() != null
-                    && player.getCurrentSong().songId() == s.songId();
+            boolean isPlaying = isCurrentTrackInThisPlaylist(s);
             row.setStyle(isPlaying ? CellStyleKit.ROW_PLAYING : CellStyleKit.ROW_DEFAULT);
             playButton.setStyle(isPlaying ? PLAY_PLAYING : PLAY_DEFAULT);
             moreButton.setStyle(MORE_DEFAULT);
@@ -176,8 +174,7 @@ public class PlayableSongCell extends ListCell<Song> {
             return;
         }
 
-        boolean isPlaying = player.getCurrentSong() != null
-                && player.getCurrentSong().songId() == song.songId();
+        boolean isPlaying = isCurrentTrackInThisPlaylist(song);
 
         titleLabel.setText(song.title());
         titleLabel.setStyle("-fx-font-size: 14px; -fx-font-weight: bold; -fx-text-fill: "
@@ -186,6 +183,7 @@ public class PlayableSongCell extends ListCell<Song> {
 
         nowPlayingBar.setVisible(isPlaying);
         nowPlayingBar.setManaged(isPlaying);
+        playButton.setText(isPlaying ? "||" : "▶");
         playButton.setStyle(isPlaying ? PLAY_PLAYING : PLAY_DEFAULT);
         row.setStyle(isPlaying ? CellStyleKit.ROW_PLAYING : CellStyleKit.ROW_DEFAULT);
         CellStyleKit.markPlaying(row, isPlaying);
@@ -217,6 +215,16 @@ public class PlayableSongCell extends ListCell<Song> {
                         "-fx-border-radius: 18; -fx-border-width: 1;" +
                         "-fx-effect: dropshadow(gaussian,rgba(0,0,0,0.65),28,0,0,10);");
 
+        Button playNextBtn = menuButton("Play Next", false);
+        playNextBtn.setOnAction(ev -> {
+            hidePopup(); player.addToQueueNext(song); ev.consume();
+        });
+
+        Button addToQueueBtn = menuButton("Add to Queue", false);
+        addToQueueBtn.setOnAction(ev -> {
+            hidePopup(); player.addToQueue(song); ev.consume();
+        });
+
         Button addBtn = menuButton("Add to Another Playlist", false);
         addBtn.setOnAction(ev -> {
             hidePopup(); if (onAddToPlaylist != null) onAddToPlaylist.accept(song); ev.consume();
@@ -228,7 +236,7 @@ public class PlayableSongCell extends ListCell<Song> {
             hidePopup(); if (onRemoveFromPlaylist != null) onRemoveFromPlaylist.accept(song); ev.consume();
         });
 
-        card.getChildren().addAll(addBtn, removeBtn);
+        card.getChildren().addAll(playNextBtn, addToQueueBtn, addBtn, removeBtn);
         popup.getContent().add(card);
 
         Bounds b = moreButton.localToScreen(moreButton.getBoundsInLocal());
@@ -260,5 +268,24 @@ public class PlayableSongCell extends ListCell<Song> {
 
     private void hidePopup() {
         if (activePopup != null) { activePopup.hide(); activePopup = null; }
+    }
+
+    private boolean isCurrentTrackInThisPlaylist(Song song) {
+        if (song == null || player.getCurrentSong() == null) {
+            return false;
+        }
+
+        String currentSourcePlaylist = player.getCurrentSourcePlaylistName();
+        String thisPlaylist = playlistNameSupplier == null ? "" : playlistNameSupplier.get();
+        if (currentSourcePlaylist == null) {
+            currentSourcePlaylist = "";
+        }
+        if (thisPlaylist == null) {
+            thisPlaylist = "";
+        }
+
+        return !currentSourcePlaylist.isBlank()
+                && currentSourcePlaylist.equals(thisPlaylist)
+                && player.getCurrentSong().songId() == song.songId();
     }
 }

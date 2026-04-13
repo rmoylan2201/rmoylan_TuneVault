@@ -17,6 +17,8 @@ import javafx.scene.control.Button;
 import javafx.scene.control.Hyperlink;
 import javafx.scene.control.Label;
 import javafx.scene.control.Slider;
+import javafx.scene.input.KeyCode;
+import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.util.Duration;
@@ -92,6 +94,19 @@ public class ExpandedPlayerController {
             if (n) openOverlay(); else closeOverlay();
         });
         player.currentSongLikedProperty().addListener((obs, o, n) -> refreshLikeButton());
+
+        overlayRoot.sceneProperty().addListener((obs, oldScene, newScene) -> {
+            if (newScene == null || newScene.getProperties().containsKey("expandedOverlayEscInstalled")) {
+                return;
+            }
+            newScene.addEventFilter(KeyEvent.KEY_PRESSED, event -> {
+                if (event.getCode() == KeyCode.ESCAPE && overlayRoot.isVisible()) {
+                    player.setExpandedPlayerVisible(false);
+                    event.consume();
+                }
+            });
+            newScene.getProperties().put("expandedOverlayEscInstalled", true);
+        });
 
         refreshAlbum();
         refreshTime();

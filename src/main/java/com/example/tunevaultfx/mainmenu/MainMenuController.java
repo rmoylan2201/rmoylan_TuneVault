@@ -2,10 +2,17 @@ package com.example.tunevaultfx.mainmenu;
 
 import com.example.tunevaultfx.session.SessionManager;
 import com.example.tunevaultfx.util.SceneUtil;
+import com.example.tunevaultfx.util.UiMotionUtil;
+import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.Node;
 import javafx.scene.control.Label;
+import javafx.scene.layout.ColumnConstraints;
+import javafx.scene.layout.GridPane;
+import javafx.scene.layout.VBox;
+
+import java.util.List;
 
 import java.io.IOException;
 
@@ -17,6 +24,12 @@ public class MainMenuController {
 
     @FXML
     private Label welcomeLabel;
+    @FXML private VBox menuContent;
+    @FXML private GridPane featureGrid;
+    @FXML private VBox searchCard;
+    @FXML private VBox playlistsCard;
+    @FXML private VBox wrappedCard;
+    @FXML private VBox genreCard;
 
     @FXML
     private void openSearchPage(ActionEvent event) throws IOException {
@@ -27,6 +40,36 @@ public class MainMenuController {
     public void initialize() {
         String username = SessionManager.getCurrentUsername();
         welcomeLabel.setText(username != null ? "Welcome, " + username : "Welcome");
+
+        Platform.runLater(() -> {
+            UiMotionUtil.playStaggeredEntrance(List.of(searchCard, playlistsCard, wrappedCard, genreCard));
+            UiMotionUtil.applyHoverLift(searchCard);
+            UiMotionUtil.applyHoverLift(playlistsCard);
+            UiMotionUtil.applyHoverLift(wrappedCard);
+            UiMotionUtil.applyHoverLift(genreCard);
+        });
+
+        if (menuContent != null && menuContent.sceneProperty() != null) {
+            menuContent.sceneProperty().addListener((obs, oldScene, newScene) -> {
+                if (newScene == null) return;
+                applyResponsiveDensity(newScene.getWidth());
+                newScene.widthProperty().addListener((o, oldW, newW) -> applyResponsiveDensity(newW.doubleValue()));
+            });
+        }
+    }
+
+    private void applyResponsiveDensity(double width) {
+        boolean compact = width < 1400;
+        featureGrid.setHgap(compact ? 14 : 18);
+        featureGrid.setVgap(compact ? 14 : 18);
+        menuContent.setSpacing(compact ? 16 : 22);
+
+        if (featureGrid.getColumnConstraints().size() >= 2) {
+            double cardWidth = compact ? 500 : 576;
+            for (ColumnConstraints cc : featureGrid.getColumnConstraints()) {
+                cc.setPrefWidth(cardWidth);
+            }
+        }
     }
 
     @FXML

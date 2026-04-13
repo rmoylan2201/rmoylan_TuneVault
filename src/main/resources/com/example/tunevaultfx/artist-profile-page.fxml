@@ -39,6 +39,9 @@
 
     <!-- ── CENTER ────────────────────────────────── -->
     <center>
+        <ScrollPane fitToWidth="true" hbarPolicy="NEVER" vbarPolicy="AS_NEEDED"
+                    style="-fx-background: transparent; -fx-background-color: transparent;">
+            <content>
         <VBox spacing="20" style="-fx-padding: 20 32 20 32;">
             <children>
 
@@ -68,7 +71,7 @@
                         <!-- Artist info -->
                         <VBox spacing="8" HBox.hgrow="ALWAYS">
                             <Label text="ARTIST"
-                                   style="-fx-font-size: 11px; -fx-font-weight: bold; -fx-text-fill: #52525b;" />
+                                   style="-fx-font-size: 11px; -fx-font-weight: bold; -fx-text-fill: #a0a0c0;" />
                             <Label fx:id="artistNameLabel"
                                    text="Artist Name"
                                    style="-fx-font-size: 38px;
@@ -77,7 +80,7 @@
                                           -fx-line-spacing: -2;" />
                             <Label fx:id="artistSummaryLabel"
                                    text="Songs available: 0"
-                                   style="-fx-font-size: 14px; -fx-text-fill: #52525b;" />
+                                   style="-fx-font-size: 14px; -fx-text-fill: #a0a0c0;" />
                         </VBox>
 
                     </children>
@@ -107,7 +110,7 @@
                             <Label text="Discography"
                                    style="-fx-font-size: 20px; -fx-font-weight: bold; -fx-text-fill: #ffffff;" />
                             <Label text="Double-click to play"
-                                   style="-fx-font-size: 12px; -fx-text-fill: #3f3f5a;" />
+                                   style="-fx-font-size: 12px; -fx-text-fill: #8a8ab0;" />
                         </HBox>
 
                         <Separator style="-fx-opacity: 0.5;" />
@@ -122,6 +125,8 @@
 
             </children>
         </VBox>
+            </content>
+        </ScrollPane>
     </center>
 
     <!-- ── BOTTOM ─────────────────────────────────── -->

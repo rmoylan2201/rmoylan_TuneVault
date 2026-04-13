@@ -12,11 +12,20 @@
 .root {
     -fx-font-family: "Helvetica Neue", "SF Pro Text", "Segoe UI", system;
     -fx-background-color: #09090f;
+    -color-bg: #09090f;
+    -color-surface: #14141e;
+    -color-surface-soft: #0f0f1e;
+    -color-text-primary: #f2f2fa;
+    -color-text-secondary: #a0a0c0;
+    -color-text-muted: #58586e;
+    -color-accent: #8b5cf6;
+    -color-accent-soft: rgba(139, 92, 246, 0.16);
 }
 
 /* ── Buttons ────────────────────────────────────────────────────── */
 .button {
     -fx-cursor: hand;
+    -fx-focus-traversable: true;
 }
 .button:hover {
     -fx-opacity: 0.88;
@@ -25,6 +34,9 @@
     -fx-scale-x: 0.96;
     -fx-scale-y: 0.96;
     -fx-opacity: 0.75;
+}
+.button:focused {
+    -fx-effect: dropshadow(gaussian, rgba(139,92,246,0.45), 12, 0, 0, 0);
 }
 
 /* ── Text Fields & Password Fields ──────────────────────────────── */
@@ -47,6 +59,7 @@
     -fx-border-color: #8b5cf6;
     -fx-border-width: 1.5;
     -fx-background-color: rgba(139, 92, 246, 0.06);
+    -fx-effect: dropshadow(gaussian, rgba(139,92,246,0.25), 10, 0, 0, 0);
 }
 .text-field:hover,
 .password-field:hover {
@@ -67,6 +80,12 @@
 .hyperlink:visited,
 .hyperlink:visited:hover {
     -fx-text-fill: #a78bfa;
+}
+.hyperlink:focused {
+    -fx-border-color: rgba(139,92,246,0.45);
+    -fx-border-radius: 8;
+    -fx-background-color: rgba(139,92,246,0.08);
+    -fx-background-radius: 8;
 }
 
 /* ── Scroll Pane ────────────────────────────────────────────────── */
@@ -110,7 +129,11 @@
     -fx-background-insets: 0;
     -fx-padding: 4 0 4 0;
 }
-.list-view:focused { -fx-border-color: transparent; -fx-background-color: transparent; }
+.list-view:focused {
+    -fx-border-color: rgba(139,92,246,0.28);
+    -fx-border-radius: 12;
+    -fx-background-color: transparent;
+}
 .list-view .viewport { -fx-background-color: transparent; }
 
 /* (3a) All cells transparent by default */
@@ -141,6 +164,11 @@
 .list-cell:filled:selected:hover {
     -fx-background-color: rgba(139, 92, 246, 0.24);
     -fx-background-radius: 12;
+}
+
+/* Keep default selected text readable unless a custom cell overrides it. */
+.list-cell:filled:selected .label {
+    -fx-text-fill: #f2f2fa;
 }
 
 /* Placeholder label (No results, No recent searches, etc.) */
@@ -235,6 +263,11 @@
     -fx-effect: dropshadow(gaussian,rgba(0,0,0,0.5),12,0,0,4);
 }
 
+/* Subtle interactive polish for cards using inline backgrounds. */
+.label {
+    -fx-snap-to-pixel: true;
+}
+
 /* ── Context / Popup Menus ──────────────────────────────────────── */
 .context-menu {
     -fx-background-color: #16162a;
@@ -304,4 +337,29 @@
     -fx-background-radius: 10;
     -fx-font-size: 14px;
     -fx-padding: 8 14 8 14;
+}
+
+/* ── Queue Panel ────────────────────────────────────────────────── */
+#queuePanelOverlay .list-view {
+    -fx-background-color: transparent;
+    -fx-background-insets: 0;
+    -fx-padding: 0;
+}
+#queuePanelOverlay .list-view .list-cell {
+    -fx-background-color: transparent;
+    -fx-padding: 0;
+}
+#queuePanelOverlay .list-view .list-cell:empty {
+    -fx-background-color: transparent;
+}
+#queuePanelOverlay .list-view .virtual-flow .scroll-bar {
+    -fx-background-color: transparent;
+}
+#queuePanelOverlay .list-view .virtual-flow .scroll-bar .thumb {
+    -fx-background-color: rgba(139,92,246,0.25);
+    -fx-background-radius: 4;
+}
+#queuePanelOverlay .separator .line {
+    -fx-border-color: rgba(255,255,255,0.04);
+    -fx-border-width: 0 0 1 0;
 }

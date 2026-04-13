@@ -5,12 +5,15 @@ import com.example.tunevaultfx.musicplayer.controller.MusicPlayerController;
 import com.example.tunevaultfx.session.SessionManager;
 import com.example.tunevaultfx.user.User;
 import com.example.tunevaultfx.util.SceneUtil;
+import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.Node;
 import javafx.scene.control.Label;
 import javafx.scene.control.PasswordField;
 import javafx.scene.control.TextField;
+import javafx.scene.input.KeyCode;
+import javafx.scene.input.KeyEvent;
 
 import java.io.IOException;
 import java.sql.SQLException;
@@ -26,6 +29,36 @@ public class LoginPageController {
     @FXML private Label statusLabel;
 
     private final UserDAO userDAO = new UserDAO();
+
+    @FXML
+    public void initialize() {
+        Platform.runLater(() -> usernameField.requestFocus());
+
+        usernameField.sceneProperty().addListener((obs, oldScene, newScene) -> {
+            if (newScene == null || newScene.getProperties().containsKey("loginHandlersInstalled")) {
+                return;
+            }
+
+            newScene.addEventFilter(KeyEvent.KEY_PRESSED, event -> {
+                if (event.getCode() == KeyCode.ENTER) {
+                    try {
+                        handleLogin(new ActionEvent(usernameField, usernameField));
+                    } catch (IOException e) {
+                        showError("Unable to open the next page.");
+                    }
+                    event.consume();
+                } else if (event.getCode() == KeyCode.ESCAPE) {
+                    usernameField.clear();
+                    passwordField.clear();
+                    clearStatus();
+                    usernameField.requestFocus();
+                    event.consume();
+                }
+            });
+
+            newScene.getProperties().put("loginHandlersInstalled", true);
+        });
+    }
 
     @FXML
     private void handleLogin(ActionEvent event) throws IOException {
