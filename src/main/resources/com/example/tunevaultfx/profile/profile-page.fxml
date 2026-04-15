@@ -58,12 +58,6 @@
                                     <Label fx:id="profileEmailLabel" text="email" styleClass="profile-email"
                                            wrapText="true"/>
                                     <Label fx:id="profileAccountIdLabel" text="" styleClass="caption" wrapText="true"/>
-                                    <HBox spacing="10" alignment="CENTER_LEFT" style="-fx-padding: 8 0 0 0;">
-                                        <Label text="Profile photo is stored on this computer; path is saved to your account."
-                                               wrapText="true" maxWidth="420" styleClass="caption"/>
-                                    </HBox>
-                                    <Label fx:id="profileMediaPathLabel" wrapText="true" maxWidth="520"
-                                           styleClass="caption" style="-fx-padding: 6 0 0 0;"/>
                                 </VBox>
                             </HBox>
 
@@ -97,6 +91,15 @@
                         <FlowPane fx:id="genreChipsFlow" hgap="8" vgap="8" styleClass="profile-genre-flow"/>
                         <Label fx:id="genreSummaryLabel" wrapText="true" styleClass="body-sm"
                                style="-fx-padding: 12 0 0 0;"/>
+                        <VBox fx:id="clearGenreQuizBlock" spacing="6" style="-fx-padding: 16 0 0 0;">
+                            <Button fx:id="clearGenreQuizButton"
+                                    text="Clear Find Your Genre from recommendations"
+                                    onAction="#handleClearGenreQuiz"
+                                    styleClass="btn-rose-soft"
+                                    wrapText="true"/>
+                            <Label wrapText="true" maxWidth="560" styleClass="caption"
+                                   text="Removes only what the genre quiz saved. Your plays, skips, playlists, and Wrapped-style stats stay."/>
+                        </VBox>
                     </VBox>
 
                     <Region prefHeight="20"/>
