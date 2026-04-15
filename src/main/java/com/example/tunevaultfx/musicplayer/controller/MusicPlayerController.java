@@ -297,9 +297,9 @@ public class MusicPlayerController {
 
         return recommendationService.getSuggestedSongsForPlaylist(
                 SessionManager.getCurrentUsername(),
+                state.getCurrentSourcePlaylistName(),
                 activePlaylistSongs,
-                limit
-        );
+                limit);
     }
 
     public boolean isCurrentSongLiked() {
@@ -403,9 +403,9 @@ public class MusicPlayerController {
 
         ObservableList<Song> suggestions = recommendationService.getSuggestedSongsForPlaylist(
                 SessionManager.getCurrentUsername(),
+                state.getCurrentSourcePlaylistName(),
                 source,
-                8
-        );
+                8);
 
         if (suggestions.isEmpty()) {
             fetchGlobalRecommendations();

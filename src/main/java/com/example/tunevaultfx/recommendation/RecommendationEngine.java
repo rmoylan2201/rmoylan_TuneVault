@@ -78,6 +78,7 @@ class RecommendationEngine {
             if (weight <= -4.0) strongNegative.add(event.songId());
         }
 
+        normalizeSongMap(songAffinity);
         normalizeMap(artistAffinity);
         normalizeMap(genreAffinity);
 
@@ -98,8 +99,10 @@ class RecommendationEngine {
         double artistScore = profile.artistAffinity().getOrDefault(normalize(song.artist()), 0.0);
         double genreScore  = profile.genreAffinity().getOrDefault(normalize(song.genre()), 0.0);
 
-        // Songs heard too many times get a novelty penalty
-        double noveltyPenalty = songScore > 3.0 ? 2.5 : 0.0;
+        // Song affinity is max-normalized like artist/genre; very high relative play still gets a
+        // small novelty nudge so "For you" is not only the single most-played track.
+        double noveltyPenalty =
+                songScore >= 0.92 ? 0.32 : (songScore >= 0.78 ? 0.14 : 0.0);
 
         return (artistScore * 2.2) + (genreScore * 1.8) + (songScore * 0.6) - noveltyPenalty;
     }
@@ -151,6 +154,13 @@ class RecommendationEngine {
     }
 
     void normalizeMap(Map<String, Double> map) {
+        double max = map.values().stream().mapToDouble(Math::abs).max().orElse(0.0);
+        if (max <= 0.0) return;
+        map.replaceAll((k, v) -> v / max);
+    }
+
+    /** Same scaling as {@link #normalizeMap(Map)} so per-song play counts do not dwarf genre/artist. */
+    void normalizeSongMap(Map<Integer, Double> map) {
         double max = map.values().stream().mapToDouble(Math::abs).max().orElse(0.0);
         if (max <= 0.0) return;
         map.replaceAll((k, v) -> v / max);
