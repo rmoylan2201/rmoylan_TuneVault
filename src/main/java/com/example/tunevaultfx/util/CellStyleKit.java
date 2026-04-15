@@ -43,11 +43,11 @@ public final class CellStyleKit {
     }
 
     public static String getTextSecondary() {
-        return AppTheme.isLightMode() ? "#475569" : TEXT_SECONDARY;
+        return AppTheme.isLightMode() ? "#334155" : TEXT_SECONDARY;
     }
 
     public static String getTextMuted() {
-        return AppTheme.isLightMode() ? "#64748b" : TEXT_MUTED;
+        return AppTheme.isLightMode() ? "#54667a" : TEXT_MUTED;
     }
 
     public static String getAccentTitle() {

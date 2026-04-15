@@ -422,7 +422,7 @@ public class PlaylistsPageController {
         String username = SessionManager.getCurrentUsername();
 
         ObservableList<Song> suggestions =
-                recommendationService.getSuggestedSongsForPlaylist(username, songs, 12);
+                recommendationService.getSuggestedSongsForPlaylist(username, selected, songs, 12);
 
         if (suggestions == null || suggestions.isEmpty()) {
             hideSuggestionsSection();
@@ -432,6 +432,7 @@ public class PlaylistsPageController {
         showSuggestionsSection(selected);
         suggestedSongsListView.setItems(suggestions);
         syncSuggestedListHeight();
+        suggestedSongsListView.refresh();
     }
 
     private void showSuggestionsSection(String playlistName) {
@@ -439,9 +440,9 @@ public class PlaylistsPageController {
         suggestionsSection.setManaged(true);
         if (suggestionSubtitleLabel != null) {
             suggestionSubtitleLabel.setText(
-                    "Below your tracks \u2014 based on \u201c"
+                    "From your library (not already in \u201c"
                             + playlistName
-                            + "\u201d and your listening history");
+                            + "\u201d) \u2014 ranked by fit to this playlist and your taste.");
         }
     }
 

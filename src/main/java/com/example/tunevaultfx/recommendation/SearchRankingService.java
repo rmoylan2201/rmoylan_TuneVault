@@ -52,10 +52,13 @@ public class SearchRankingService {
             double textScore = songTextMatchScore(song, normalizedQuery);
             if (textScore <= 0.0) continue;
 
-            // Blend text relevance with personal affinity
+            // Blend text relevance with personal affinity (incl. this track if you've played it)
             double userAffinity =
-                    profile.artistAffinity().getOrDefault(engine.normalize(song.artist()), 0.0) * 0.3 +
-                            profile.genreAffinity().getOrDefault(engine.normalize(song.genre()), 0.0) * 0.2;
+                    profile.artistAffinity().getOrDefault(engine.normalize(song.artist()), 0.0) * 0.3
+                            + profile.genreAffinity()
+                                    .getOrDefault(engine.normalize(song.genre()), 0.0)
+                                    * 0.2
+                            + profile.songAffinity().getOrDefault(song.songId(), 0.0) * 0.25;
 
             ranked.add(new ScoredSong(song, textScore + userAffinity));
         }

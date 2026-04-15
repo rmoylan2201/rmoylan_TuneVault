@@ -1,0 +1,123 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.image.ImageView?>
+<?import javafx.scene.layout.*?>
+
+<BorderPane xmlns="http://javafx.com/javafx/21"
+            xmlns:fx="http://javafx.com/fxml/1"
+            fx:controller="com.example.tunevaultfx.profile.ProfilePageController"
+            prefWidth="1280.0" prefHeight="820.0"
+            minWidth="1180.0" minHeight="780.0"
+            styleClass="page-bg">
+
+    <top>
+        <fx:include source="../chrome/app-top-bar.fxml"/>
+    </top>
+
+    <left>
+        <fx:include source="../chrome/app-sidebar.fxml"/>
+    </left>
+
+    <center>
+        <ScrollPane fitToWidth="true" hbarPolicy="NEVER" vbarPolicy="AS_NEEDED"
+                    styleClass="profile-scroll">
+            <content>
+                <VBox fx:id="profilePageRoot" spacing="0" maxWidth="920" styleClass="profile-page-root">
+                    <padding>
+                        <Insets top="8" right="28" bottom="40" left="28"/>
+                    </padding>
+
+                    <VBox spacing="20" styleClass="profile-header-shell">
+                        <padding>
+                            <Insets top="20" right="24" bottom="24" left="24"/>
+                        </padding>
+                            <HBox spacing="20" alignment="TOP_LEFT" styleClass="profile-identity-row">
+                                <StackPane styleClass="profile-avatar" prefWidth="96" minWidth="96" maxWidth="96"
+                                           prefHeight="96" minHeight="96" maxHeight="96">
+                                    <ImageView fx:id="profileAvatarImage" fitWidth="96" fitHeight="96"
+                                               pickOnBounds="true" preserveRatio="true" smooth="true" cache="true"/>
+                                    <Label fx:id="profileAvatarInitial" text="?"
+                                           styleClass="profile-avatar-initial" mouseTransparent="true"/>
+                                    <StackPane alignment="BOTTOM_RIGHT" pickOnBounds="false" mouseTransparent="false">
+                                        <HBox spacing="6" pickOnBounds="false" style="-fx-padding: 0 2 2 0;">
+                                            <Button fx:id="changeAvatarButton" text="Photo"
+                                                    styleClass="btn-ghost, profile-media-chip-sm"
+                                                    focusTraversable="false"/>
+                                            <Button fx:id="removeAvatarButton" text="Clear"
+                                                    styleClass="btn-ghost, profile-media-chip-sm"
+                                                    focusTraversable="false"/>
+                                        </HBox>
+                                    </StackPane>
+                                </StackPane>
+                                <VBox spacing="6" HBox.hgrow="ALWAYS">
+                                    <Label fx:id="profileDisplayName" text="Display name"
+                                           styleClass="profile-display-name" wrapText="true"/>
+                                    <Label fx:id="profileHandleLabel" text="@username" styleClass="profile-handle"/>
+                                    <Label fx:id="profileEmailLabel" text="email" styleClass="profile-email"
+                                           wrapText="true"/>
+                                    <Label fx:id="profileAccountIdLabel" text="" styleClass="caption" wrapText="true"/>
+                                    <HBox spacing="10" alignment="CENTER_LEFT" style="-fx-padding: 8 0 0 0;">
+                                        <Label text="Profile photo is stored on this computer; path is saved to your account."
+                                               wrapText="true" maxWidth="420" styleClass="caption"/>
+                                    </HBox>
+                                    <Label fx:id="profileMediaPathLabel" wrapText="true" maxWidth="520"
+                                           styleClass="caption" style="-fx-padding: 6 0 0 0;"/>
+                                </VBox>
+                            </HBox>
+
+                            <HBox spacing="12" alignment="CENTER_LEFT" styleClass="profile-stat-row">
+                                <VBox styleClass="profile-stat-tile" HBox.hgrow="ALWAYS">
+                                    <Label fx:id="statPlaylistsValue" text="0" styleClass="profile-stat-value"/>
+                                    <Label text="Playlists" styleClass="profile-stat-label"/>
+                                </VBox>
+                                <VBox styleClass="profile-stat-tile" HBox.hgrow="ALWAYS">
+                                    <Label fx:id="statSavedValue" text="0" styleClass="profile-stat-value"/>
+                                    <Label text="Saved songs" styleClass="profile-stat-label"/>
+                                </VBox>
+                                <VBox styleClass="profile-stat-tile" HBox.hgrow="ALWAYS">
+                                    <Label fx:id="statListeningValue" text="0" styleClass="profile-stat-value"/>
+                                    <Label fx:id="statListeningHint" text="Counted plays"
+                                           styleClass="profile-stat-label"/>
+                                </VBox>
+                            </HBox>
+                    </VBox>
+
+                    <Region prefHeight="8"/>
+
+                    <Label text="Taste &amp; discovery" styleClass="profile-section-heading"/>
+                    <VBox spacing="0" styleClass="card-elevated profile-detail-card">
+                        <padding>
+                            <Insets top="22" right="24" bottom="22" left="24"/>
+                        </padding>
+                        <Label text="Genre blend" styleClass="heading-sm"/>
+                        <Label text="Used for recommendations, search ranking, and autoplay suggestions."
+                               wrapText="true" styleClass="caption" style="-fx-padding: 4 0 12 0;"/>
+                        <FlowPane fx:id="genreChipsFlow" hgap="8" vgap="8" styleClass="profile-genre-flow"/>
+                        <Label fx:id="genreSummaryLabel" wrapText="true" styleClass="body-sm"
+                               style="-fx-padding: 12 0 0 0;"/>
+                    </VBox>
+
+                    <Region prefHeight="20"/>
+
+                    <Label text="Listening activity" styleClass="profile-section-heading"/>
+                    <VBox spacing="0" styleClass="card-elevated profile-detail-card">
+                        <padding>
+                            <Insets top="22" right="24" bottom="22" left="24"/>
+                        </padding>
+                        <Label text="This device &amp; account" styleClass="heading-sm"/>
+                        <Label fx:id="listeningSummaryLabel" wrapText="true" styleClass="body-sm"
+                               style="-fx-padding: 8 0 0 0;"/>
+                        <Label text="Counts include sessions that reached your play threshold (same logic as Wrapped)."
+                               wrapText="true" styleClass="caption" style="-fx-padding: 10 0 0 0;"/>
+                    </VBox>
+                </VBox>
+            </content>
+        </ScrollPane>
+    </center>
+
+    <bottom>
+        <fx:include source="../musicplayer/controller/mini-player.fxml"/>
+    </bottom>
+</BorderPane>

@@ -9,6 +9,7 @@ import com.example.tunevaultfx.musicplayer.controller.MusicPlayerController;
 import com.example.tunevaultfx.recommendation.RecommendationService;
 import com.example.tunevaultfx.session.SessionManager;
 import com.example.tunevaultfx.user.UserProfile;
+import com.example.tunevaultfx.util.AppTheme;
 import com.example.tunevaultfx.util.CellStyleKit;
 import com.example.tunevaultfx.util.SceneUtil;
 import com.example.tunevaultfx.util.SongContextMenuBuilder;
@@ -78,6 +79,9 @@ public class MainMenuController {
         }
 
         UserProfile profile = SessionManager.getCurrentUserProfile();
+        if (profile != null && profile.getPlaylists() != null) {
+            profile.getPlaylists().addListener(new WeakMapChangeListener<>(homePlaylistKeysChanged));
+        }
         int playlistCount =
                 profile != null && profile.getPlaylists() != null ? profile.getPlaylists().size() : 0;
         int songTotal = countUniqueSavedSongs(profile);
@@ -184,9 +188,10 @@ public class MainMenuController {
             }
         } catch (SQLException e) {
             e.printStackTrace();
-            homeVibeLabel.setText("");
-            homeVibeLabel.setVisible(false);
-            homeVibeLabel.setManaged(false);
+            homeVibeLabel.getStyleClass().setAll("caption");
+            homeVibeLabel.setText("Couldn\u2019t load your genre profile. Your music still works as usual.");
+            homeVibeLabel.setVisible(true);
+            homeVibeLabel.setManaged(true);
             if (homeVibeSubLabel != null) {
                 homeVibeSubLabel.setText("");
                 homeVibeSubLabel.setVisible(false);
@@ -368,17 +373,12 @@ public class MainMenuController {
                                 }
 
                                 Label glyph = new Label("\u266A");
-                                glyph.setStyle(
-                                        "-fx-font-size: 15px; -fx-text-fill: #a78bfa; -fx-font-weight: bold;");
+                                glyph.setStyle(homeFeedNoteGlyphStyle());
                                 StackPane icon = new StackPane(glyph);
                                 icon.setPrefSize(36, 36);
                                 icon.setMinSize(36, 36);
                                 icon.setMaxSize(36, 36);
-                                icon.setStyle(
-                                        "-fx-background-color: rgba(139,92,246,0.14);"
-                                                + "-fx-background-radius: 10;"
-                                                + "-fx-border-color: rgba(139,92,246,0.22);"
-                                                + "-fx-border-radius: 10; -fx-border-width: 1;");
+                                icon.setStyle(homeFeedNoteIconBoxStyle());
 
                                 VBox text =
                                         CellStyleKit.songTextBox(
@@ -391,9 +391,7 @@ public class MainMenuController {
                                 HBox.setHgrow(sp, Priority.ALWAYS);
 
                                 Button play = new Button("\u25B6");
-                                play.setStyle(
-                                        "-fx-background-color: transparent; -fx-text-fill: #7c3aed;"
-                                                + "-fx-font-size: 12px; -fx-font-weight: bold;");
+                                play.setStyle(homeFeedPlayButtonStyle());
                                 play.setPrefSize(34, 34);
                                 play.setFocusTraversable(false);
                                 play.setOnAction(e -> player.playSingleSong(song));
@@ -401,6 +399,8 @@ public class MainMenuController {
                                 HBox row = new HBox(12, icon, text, sp, play);
                                 row.setAlignment(Pos.CENTER_LEFT);
                                 row.setPadding(new Insets(6, 10, 6, 10));
+                                row.setStyle(CellStyleKit.getRowDefault());
+                                CellStyleKit.addHover(row);
 
                                 row.setOnMouseClicked(
                                         ev -> {
@@ -452,6 +452,31 @@ public class MainMenuController {
         if (homeFeedRow != null) {
             homeFeedRow.setSpacing(width < 1100 ? 16 : 20);
         }
+    }
+
+    private static String homeFeedNoteGlyphStyle() {
+        String fill = AppTheme.isLightMode() ? "#5b21b6" : "#a78bfa";
+        return "-fx-font-size: 15px; -fx-text-fill: " + fill + "; -fx-font-weight: bold;";
+    }
+
+    private static String homeFeedNoteIconBoxStyle() {
+        if (AppTheme.isLightMode()) {
+            return "-fx-background-color: rgba(124,58,237,0.14);"
+                    + "-fx-background-radius: 10;"
+                    + "-fx-border-color: rgba(124,58,237,0.32);"
+                    + "-fx-border-radius: 10; -fx-border-width: 1;";
+        }
+        return "-fx-background-color: rgba(139,92,246,0.14);"
+                + "-fx-background-radius: 10;"
+                + "-fx-border-color: rgba(139,92,246,0.22);"
+                + "-fx-border-radius: 10; -fx-border-width: 1;";
+    }
+
+    private static String homeFeedPlayButtonStyle() {
+        String fill = AppTheme.isLightMode() ? "#5b21b6" : "#7c3aed";
+        return "-fx-background-color: transparent; -fx-text-fill: "
+                + fill
+                + "; -fx-font-size: 12px; -fx-font-weight: bold;";
     }
 
     @FXML

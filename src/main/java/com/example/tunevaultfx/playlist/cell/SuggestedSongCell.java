@@ -22,7 +22,7 @@ import java.util.function.Consumer;
 /**
  * Suggested song row.
  *
- * Layout: [♫] [▶] [title / meta] [spacer] [+]
+ * Layout: [♫] [▶] [title / artist · genre] [+]
  *
  * The play button sits between the icon and the song name.
  * The [+] add button is on the far right, invisible at rest and
@@ -40,7 +40,6 @@ public class SuggestedSongCell extends ListCell<Song> {
     private final Button    addButton  = new Button("+");
     private final Label     titleLabel = new Label();
     private final VBox      textBox    = new VBox(3);
-    private final Region    spacer     = new Region();
     private final Button    playButton = new Button("▶");
 
     // ── Add-button styles ─────────────────────────────────────────
@@ -144,7 +143,6 @@ public class SuggestedSongCell extends ListCell<Song> {
                 "-fx-text-fill: " + CellStyleKit.getTextPrimary() + ";");
         textBox.getChildren().add(titleLabel);
         HBox.setHgrow(textBox, Priority.ALWAYS);
-        HBox.setHgrow(spacer,  Priority.ALWAYS);
 
         // Fixed-size slot for the add button so layout never shifts
         addWrapper.setPrefSize(34, 34);
@@ -158,11 +156,11 @@ public class SuggestedSongCell extends ListCell<Song> {
         addButton.setOpacity(0);
         addWrapper.getChildren().add(addButton);
 
-        // Row: [♫] [▶] [title/meta] [spacer] [+]
+        // Row: [♫] [▶] [title/meta grows] [+] — single HGrow so the + stays right-aligned
         root.setAlignment(Pos.CENTER_LEFT);
         root.setPadding(new Insets(8, 14, 8, 14));
         root.setStyle(CellStyleKit.getRowDefault());
-        root.getChildren().addAll(iconBox, playButton, textBox, spacer, addWrapper);
+        root.getChildren().addAll(iconBox, playButton, textBox, addWrapper);
 
         // Row hover — reveal both the play button and the + button
         root.setOnMouseEntered(e -> {
@@ -281,7 +279,7 @@ public class SuggestedSongCell extends ListCell<Song> {
         while (textBox.getChildren().size() > 1) {
             textBox.getChildren().remove(1);
         }
-        HBox meta = CellStyleKit.songMetaLine(song.artist(), null, onOpenArtist);
+        HBox meta = CellStyleKit.songMetaLine(song.artist(), song.genre(), onOpenArtist);
         if (!meta.getChildren().isEmpty()) {
             textBox.getChildren().add(meta);
         }

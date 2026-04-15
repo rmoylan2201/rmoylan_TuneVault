@@ -265,7 +265,7 @@ public class PlayableSongCell extends ListCell<Song> {
         while (textBox.getChildren().size() > 1) {
             textBox.getChildren().remove(1);
         }
-        HBox meta = CellStyleKit.songMetaLine(song.artist(), null, onOpenArtist);
+        HBox meta = CellStyleKit.songMetaLine(song.artist(), song.genre(), onOpenArtist);
         if (!meta.getChildren().isEmpty()) {
             textBox.getChildren().add(meta);
         }
