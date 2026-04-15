@@ -20,6 +20,7 @@ import javafx.scene.control.Label;
 import javafx.scene.control.Slider;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
+import javafx.scene.layout.Region;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.util.Duration;
@@ -65,6 +66,8 @@ public class ExpandedPlayerController {
         overlayRoot.setManaged(false);
         overlayRoot.setOpacity(0);
         playerCard.setTranslateY(80);
+        // StackPane would stretch the card to fill the window; keep height to content so it centers.
+        playerCard.setMaxHeight(Region.USE_PREF_SIZE);
 
         titleLabel.textProperty().bind(player.currentTitleProperty());
         artistLink.textProperty().bind(player.currentArtistProperty());

@@ -84,6 +84,23 @@ public final class UserGenreDiscoveryDAO {
     }
 
     /**
+     * Deletes the saved Find Your Genre row for this user. Does not touch listening events,
+     * playlists, or any other profile data. Returns whether a row was removed.
+     */
+    public boolean deleteForUser(String username) throws SQLException {
+        Integer userId = findUserId(username);
+        if (userId == null) {
+            return false;
+        }
+        String sql = "DELETE FROM user_genre_discovery WHERE user_id = ?";
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setInt(1, userId);
+            return stmt.executeUpdate() > 0;
+        }
+    }
+
+    /**
      * Loads saved quiz labels for home / settings UI (not the numeric boosts).
      */
     public Optional<UserGenreDiscoverySummary> loadSummary(String username) throws SQLException {

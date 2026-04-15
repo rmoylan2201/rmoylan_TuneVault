@@ -8,12 +8,15 @@ import com.example.tunevaultfx.profile.media.ProfileAvatarCropDialog;
 import com.example.tunevaultfx.profile.media.ProfileMediaStorage;
 import com.example.tunevaultfx.session.SessionManager;
 import com.example.tunevaultfx.user.User;
+import com.example.tunevaultfx.util.AppTheme;
 import com.example.tunevaultfx.user.UserProfile;
 import com.example.tunevaultfx.util.ToastUtil;
 import com.example.tunevaultfx.util.UiMotionUtil;
 import javafx.application.Platform;
 import javafx.fxml.FXML;
+import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
+import javafx.scene.control.ButtonType;
 import javafx.scene.control.Label;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
@@ -49,10 +52,11 @@ public class ProfilePageController {
     @FXML private Label statListeningHint;
     @FXML private FlowPane genreChipsFlow;
     @FXML private Label genreSummaryLabel;
+    @FXML private VBox clearGenreQuizBlock;
+    @FXML private Button clearGenreQuizButton;
     @FXML private Label listeningSummaryLabel;
     @FXML private Button changeAvatarButton;
     @FXML private Button removeAvatarButton;
-    @FXML private Label profileMediaPathLabel;
 
     private final UserDAO userDAO = new UserDAO();
     private final UserGenreDiscoveryDAO genreDiscoveryDAO = new UserGenreDiscoveryDAO();
@@ -66,14 +70,14 @@ public class ProfilePageController {
     public void initialize() {
         setupAvatarClip();
 
-        if (profileMediaPathLabel != null) {
-            profileMediaPathLabel.setText("Photos folder: " + ProfileMediaStorage.rootDirectory());
-        }
-
         sessionUsername = SessionManager.getCurrentUsername();
         if (sessionUsername == null || sessionUsername.isBlank()) {
             applySignedOutPlaceholder();
             return;
+        }
+        if (clearGenreQuizBlock != null) {
+            clearGenreQuizBlock.setVisible(true);
+            clearGenreQuizBlock.setManaged(true);
         }
 
         loadIdentity(sessionUsername);
@@ -117,6 +121,10 @@ public class ProfilePageController {
         listeningSummaryLabel.setText("Listening history is tied to your account.");
         changeAvatarButton.setDisable(true);
         removeAvatarButton.setDisable(true);
+        if (clearGenreQuizBlock != null) {
+            clearGenreQuizBlock.setVisible(false);
+            clearGenreQuizBlock.setManaged(false);
+        }
     }
 
     private void loadIdentity(String username) {
@@ -314,6 +322,55 @@ public class ProfilePageController {
             err.getStyleClass().add("profile-genre-chip-muted");
             genreChipsFlow.getChildren().add(err);
             genreSummaryLabel.setText(ProfileGenreMessages.loadFailureHint(e));
+        } finally {
+            updateClearGenreQuizButton(username);
+        }
+    }
+
+    @FXML
+    private void handleClearGenreQuiz() {
+        if (sessionUsername == null || sessionUsername.isBlank()) {
+            return;
+        }
+        Alert confirm = new Alert(Alert.AlertType.CONFIRMATION);
+        confirm.setTitle("Clear genre quiz?");
+        confirm.setHeaderText("Remove Find Your Genre from recommendations?");
+        confirm.setContentText(
+                "This deletes only your saved quiz blend in the database. Listening history, playlists, "
+                        + "and play counts are not changed. You can retake the quiz anytime.");
+        Optional<ButtonType> choice = confirm.showAndWait();
+        if (choice.isEmpty() || choice.get() != ButtonType.OK) {
+            return;
+        }
+        try {
+            boolean removed = genreDiscoveryDAO.deleteForUser(sessionUsername);
+            if (!removed) {
+                ToastUtil.info(scene(), "No saved genre quiz to clear.");
+            } else {
+                ToastUtil.success(scene(), "Genre quiz cleared. Recommendations now use your listening only.");
+            }
+            loadTasteSection(sessionUsername);
+            if (profilePageRoot != null) {
+                AppTheme.refreshAllListViews(profilePageRoot);
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+            ToastUtil.error(scene(), "Could not clear genre quiz. Check your database connection.");
+        }
+    }
+
+    private void updateClearGenreQuizButton(String username) {
+        if (clearGenreQuizButton == null) {
+            return;
+        }
+        if (username == null || username.isBlank()) {
+            clearGenreQuizButton.setDisable(true);
+            return;
+        }
+        try {
+            clearGenreQuizButton.setDisable(!genreDiscoveryDAO.hasSavedProfile(username));
+        } catch (SQLException e) {
+            clearGenreQuizButton.setDisable(true);
         }
     }
 }
