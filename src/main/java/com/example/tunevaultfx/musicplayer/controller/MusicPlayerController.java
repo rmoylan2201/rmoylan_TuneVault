@@ -23,10 +23,16 @@ import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.util.Duration;
 
+import java.util.HashSet;
+import java.util.Set;
+
 /**
  * Coordinates shared playback logic for the whole application.
  */
 public class MusicPlayerController {
+
+    private static final int TARGET_AUTOPLAY_BUFFER = 12;
+    private static final int AUTOPLAY_TOPUP_BATCH   = 10;
 
     private static final MusicPlayerController instance = new MusicPlayerController();
 
@@ -46,6 +52,12 @@ public class MusicPlayerController {
     private final BooleanProperty expandedPlayerVisible = new SimpleBooleanProperty(false);
     private final BooleanProperty currentSongLiked = new SimpleBooleanProperty(false);
 
+    /**
+     * While true, {@link #currentSongLikedProperty()} is being synced to the new current track
+     * (not a user like/unlike). UI that reacts to heart changes should ignore side effects.
+     */
+    private boolean applyingTrackDerivedLikedState;
+
     private final PlaybackLifecycleService lifecycleService;
     private final PlaybackNavigator playbackNavigator;
     private final Timeline timeline;
@@ -53,7 +65,7 @@ public class MusicPlayerController {
     private ObservableList<Song> activePlaylistSongs = FXCollections.observableArrayList();
     private int activePlaylistIndex = -1;
 
-    private ObservableList<Song> autoplaySuggestions = FXCollections.observableArrayList();
+    private final ObservableList<Song> autoplaySuggestions = FXCollections.observableArrayList();
     private int autoplaySuggestionIndex = -1;
     private boolean playingAutoplaySuggestions = false;
 
@@ -119,7 +131,7 @@ public class MusicPlayerController {
         timeline.setCycleCount(Timeline.INDEFINITE);
 
         // Keep liked-state UI in sync whenever the currently playing song changes.
-        state.currentSongProperty().addListener((obs, oldSong, newSong) -> refreshCurrentSongLiked());
+        state.currentSongProperty().addListener((obs, oldSong, newSong) -> refreshCurrentSongLikedFromTrackChange());
     }
 
     public void playQueue(ObservableList<Song> songs, int index) {
@@ -298,6 +310,27 @@ public class MusicPlayerController {
         return currentSongLiked;
     }
 
+    /**
+     * Call when the now-playing song changes so the heart matches that track.
+     * Does not represent a user like action — see {@link #isApplyingTrackDerivedLikedState()}.
+     */
+    private void refreshCurrentSongLikedFromTrackChange() {
+        applyingTrackDerivedLikedState = true;
+        try {
+            currentSongLiked.set(libraryService.isLiked(state.getCurrentSong()));
+        } finally {
+            applyingTrackDerivedLikedState = false;
+        }
+    }
+
+    /**
+     * True during {@link #currentSongLikedProperty()} updates triggered by a track change.
+     */
+    public boolean isApplyingTrackDerivedLikedState() {
+        return applyingTrackDerivedLikedState;
+    }
+
+    /** Refresh heart from the library (user toggled like, playlist changed, etc.). */
     public void refreshCurrentSongLiked() {
         currentSongLiked.set(libraryService.isLiked(state.getCurrentSong()));
     }
@@ -342,6 +375,8 @@ public class MusicPlayerController {
 
     private void playNextFromUserQueue() {
         Song next = userQueue.remove(0);
+        activePlaylistSongs.clear();
+        activePlaylistIndex = -1;
         playingAutoplaySuggestions = false;
         autoplaySuggestions.clear();
         autoplaySuggestionIndex = -1;
@@ -371,25 +406,46 @@ public class MusicPlayerController {
             return;
         }
 
-        autoplaySuggestions = FXCollections.observableArrayList(suggestions);
+        autoplaySuggestions.clear();
+        autoplaySuggestions.addAll(suggestions);
         autoplaySuggestionIndex = 0;
         playingAutoplaySuggestions = true;
         lifecycleService.playSingleSong(autoplaySuggestions.get(0));
+        topUpAutoplayBuffer();
     }
 
     private void fetchGlobalRecommendations() {
-        ObservableList<Song> global = recommendationService.getSuggestedSongsForUser(
-                SessionManager.getCurrentUsername(), 10);
+        String user = SessionManager.getCurrentUsername();
+        ObservableList<Song> global = recommendationService.getSuggestedSongsForUser(user, 10);
 
         if (global.isEmpty()) {
-            stop();
+            global = recommendationService.getAutoplayContinuation(
+                    user,
+                    state.getCurrentSong(),
+                    collectExcludeIdsForAutoplayTopUp(),
+                    Math.max(TARGET_AUTOPLAY_BUFFER, AUTOPLAY_TOPUP_BATCH));
+        }
+
+        if (global.isEmpty()) {
+            Song anchor = state.getCurrentSong();
+            if (anchor != null) {
+                autoplaySuggestions.clear();
+                autoplaySuggestions.add(anchor);
+                autoplaySuggestionIndex = 0;
+                playingAutoplaySuggestions = true;
+                lifecycleService.playSingleSong(anchor);
+            } else {
+                stop();
+            }
             return;
         }
 
-        autoplaySuggestions = FXCollections.observableArrayList(global);
+        autoplaySuggestions.clear();
+        autoplaySuggestions.addAll(global);
         autoplaySuggestionIndex = 0;
         playingAutoplaySuggestions = true;
         lifecycleService.playSingleSong(autoplaySuggestions.get(0));
+        topUpAutoplayBuffer();
     }
 
     private void playNextAutoplaySuggestion() {
@@ -401,9 +457,68 @@ public class MusicPlayerController {
         if (autoplaySuggestionIndex < autoplaySuggestions.size() - 1) {
             autoplaySuggestionIndex++;
             lifecycleService.playSingleSong(autoplaySuggestions.get(autoplaySuggestionIndex));
+            topUpAutoplayBuffer();
         } else {
             startAutoplaySuggestions();
         }
+    }
+
+    /**
+     * Keeps a healthy tail of autoplay tracks so the queue rarely runs dry.
+     */
+    private void topUpAutoplayBuffer() {
+        if (!playingAutoplaySuggestions) {
+            return;
+        }
+
+        int upcoming = autoplaySuggestions.size() - (autoplaySuggestionIndex + 1);
+        if (upcoming >= TARGET_AUTOPLAY_BUFFER) {
+            return;
+        }
+
+        int need = TARGET_AUTOPLAY_BUFFER - upcoming;
+        ObservableList<Song> more = recommendationService.getAutoplayContinuation(
+                SessionManager.getCurrentUsername(),
+                state.getCurrentSong(),
+                collectExcludeIdsForAutoplayTopUp(),
+                Math.max(need, AUTOPLAY_TOPUP_BATCH));
+
+        for (Song s : more) {
+            if (s != null && s.songId() > 0) {
+                autoplaySuggestions.add(s);
+            }
+        }
+    }
+
+    private Set<Integer> collectExcludeIdsForAutoplayTopUp() {
+        HashSet<Integer> ids = new HashSet<>();
+        Song cur = state.getCurrentSong();
+        if (cur != null && cur.songId() > 0) {
+            ids.add(cur.songId());
+        }
+        for (Song s : userQueue) {
+            if (s != null && s.songId() > 0) {
+                ids.add(s.songId());
+            }
+        }
+        for (Song s : autoplaySuggestions) {
+            if (s != null && s.songId() > 0) {
+                ids.add(s.songId());
+            }
+        }
+        for (Song s : activePlaylistSongs) {
+            if (s != null && s.songId() > 0) {
+                ids.add(s.songId());
+            }
+        }
+        return ids;
+    }
+
+    /**
+     * Observable tail used by the queue panel; mutations always go through this list.
+     */
+    public ObservableList<Song> getAutoplaySuggestionsList() {
+        return autoplaySuggestions;
     }
 
     // ── User queue management ─────────────────────────────────────
@@ -532,6 +647,10 @@ public class MusicPlayerController {
         state.setCurrentSecond(state.getCurrentSecond() + 1);
         sessionTracker.tick(SessionManager.getCurrentUsername(), state.getCurrentSong());
 
+        if (playingAutoplaySuggestions) {
+            topUpAutoplayBuffer();
+        }
+
         if (state.getCurrentSecond() >= state.getCurrentDuration()) {
             next();
         }
@@ -541,7 +660,7 @@ public class MusicPlayerController {
         Song song = queue.getCurrentSong();
         state.setCurrentSong(song);
         state.setCurrentSourcePlaylistName(queue.getSourcePlaylistName());
-        refreshCurrentSongLiked();
+        // Liked state: handled by currentSongProperty listener → refreshCurrentSongLikedFromTrackChange
     }
 
     private void startSessionForCurrentSong() {

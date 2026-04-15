@@ -2,12 +2,15 @@ package com.example.tunevaultfx.playlist.cell;
 
 import com.example.tunevaultfx.core.Song;
 import com.example.tunevaultfx.util.CellStyleKit;
+import com.example.tunevaultfx.util.SongContextMenuBuilder;
 import javafx.animation.PauseTransition;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.control.Button;
+import javafx.scene.control.ContextMenu;
 import javafx.scene.control.Label;
 import javafx.scene.control.ListCell;
+import javafx.scene.input.ContextMenuEvent;
 import javafx.scene.input.MouseButton;
 import javafx.scene.layout.*;
 import javafx.util.Duration;
@@ -24,6 +27,7 @@ public class SearchSongToggleCell extends ListCell<Song> {
     private final Consumer<Song>  onToggleSong;
     private final Consumer<Song>  onPlay;
     private final Consumer<String> onOpenArtist;
+    private final Consumer<Song>  onOpenAddToPlaylist;
 
     private final HBox   root        = new HBox(12);
     private final VBox   textBox     = new VBox(3);
@@ -54,23 +58,25 @@ public class SearchSongToggleCell extends ListCell<Song> {
     public SearchSongToggleCell(Predicate<Song> isSongInPlaylist,
                                 Consumer<Song> onToggleSong,
                                 Consumer<Song> onPlay,
-                                Consumer<String> onOpenArtist) {
+                                Consumer<String> onOpenArtist,
+                                Consumer<Song> onOpenAddToPlaylist) {
         this.isSongInPlaylist = isSongInPlaylist;
-        this.onToggleSong     = onToggleSong;
-        this.onPlay           = onPlay;
-        this.onOpenArtist     = onOpenArtist;
+        this.onToggleSong = onToggleSong;
+        this.onPlay = onPlay;
+        this.onOpenArtist = onOpenArtist;
+        this.onOpenAddToPlaylist = onOpenAddToPlaylist;
 
         root.setSpacing(12);
         root.setPadding(new Insets(9, 12, 9, 12));
         root.setAlignment(Pos.CENTER_LEFT);
-        root.setStyle(CellStyleKit.ROW_DEFAULT);
+        root.setStyle(CellStyleKit.getRowDefault());
 
         HBox.setHgrow(spacer,  Priority.ALWAYS);
         HBox.setHgrow(textBox, Priority.ALWAYS);
 
         titleLabel.setStyle(
                 "-fx-font-size: 14px; -fx-font-weight: bold;" +
-                        "-fx-text-fill: " + CellStyleKit.TEXT_PRIMARY + ";");
+                        "-fx-text-fill: " + CellStyleKit.getTextPrimary() + ";");
         textBox.getChildren().add(titleLabel);
 
         actionButton.setPrefWidth(44);
@@ -80,8 +86,8 @@ public class SearchSongToggleCell extends ListCell<Song> {
 
         root.getChildren().addAll(textBox, spacer, actionButton);
 
-        root.setOnMouseEntered(e -> root.setStyle(CellStyleKit.ROW_HOVER));
-        root.setOnMouseExited(e  -> root.setStyle(CellStyleKit.ROW_DEFAULT));
+        root.setOnMouseEntered(e -> root.setStyle(CellStyleKit.getRowHover()));
+        root.setOnMouseExited(e  -> root.setStyle(CellStyleKit.getRowDefault()));
 
         root.setOnMouseClicked(ev -> {
             if (getItem() == null || isEmpty()) return;
@@ -90,6 +96,34 @@ public class SearchSongToggleCell extends ListCell<Song> {
                 ev.consume();
             }
         });
+
+        root.addEventFilter(
+                ContextMenuEvent.CONTEXT_MENU_REQUESTED,
+                ev -> {
+                    Song s = getItem();
+                    if (s == null || isEmpty()) {
+                        return;
+                    }
+                    ContextMenu menu =
+                            SongContextMenuBuilder.build(
+                                    s,
+                                    root,
+                                    SongContextMenuBuilder.Spec.general());
+                    if (onOpenAddToPlaylist != null) {
+                        for (var item : menu.getItems()) {
+                            if ("Add to playlist".equals(item.getText())) {
+                                item.setOnAction(
+                                        e -> {
+                                            menu.hide();
+                                            onOpenAddToPlaylist.accept(s);
+                                        });
+                                break;
+                            }
+                        }
+                    }
+                    menu.show(root, ev.getScreenX(), ev.getScreenY());
+                    ev.consume();
+                });
 
         setOnMousePressed(ev -> {
             if (!isEmpty() && getListView() != null) {
@@ -109,10 +143,13 @@ public class SearchSongToggleCell extends ListCell<Song> {
         }
 
         titleLabel.setText(song.title());
+        titleLabel.setStyle(
+                "-fx-font-size: 14px; -fx-font-weight: bold;"
+                        + "-fx-text-fill: " + CellStyleKit.getTextPrimary() + ";");
         while (textBox.getChildren().size() > 1) {
             textBox.getChildren().remove(1);
         }
-        HBox meta = CellStyleKit.songMetaLine(song.artist(), song.genre(), onOpenArtist);
+        HBox meta = CellStyleKit.songMetaLine(song.artist(), null, onOpenArtist);
         if (!meta.getChildren().isEmpty()) {
             textBox.getChildren().add(meta);
         }
@@ -150,7 +187,7 @@ public class SearchSongToggleCell extends ListCell<Song> {
                 : "-fx-background-color: rgba(244,63,94,0.12); -fx-background-radius: 13;";
         root.setStyle(flash);
         PauseTransition p = new PauseTransition(Duration.millis(220));
-        p.setOnFinished(e -> root.setStyle(CellStyleKit.ROW_DEFAULT));
+        p.setOnFinished(e -> root.setStyle(CellStyleKit.getRowDefault()));
         p.play();
     }
 }

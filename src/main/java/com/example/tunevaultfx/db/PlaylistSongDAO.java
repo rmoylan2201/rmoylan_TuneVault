@@ -1,5 +1,6 @@
 package com.example.tunevaultfx.db;
 
+import com.example.tunevaultfx.core.PlaylistNames;
 import com.example.tunevaultfx.core.Song;
 
 import java.sql.*;
@@ -88,7 +89,7 @@ public class PlaylistSongDAO {
 
         playlistDAO.ensureLikedSongsPlaylistExists(userId);
 
-        Integer likedSongsId = playlistDAO.findPlaylistId(userId, "Liked Songs");
+        Integer likedSongsId = playlistDAO.findPlaylistId(userId, PlaylistNames.LIKED_SONGS);
         if (likedSongsId == null) return;
 
         if (playlistContainsSong(likedSongsId, song.songId())) {

@@ -1,6 +1,8 @@
 package com.example.tunevaultfx.musicplayer.controller;
 
 import com.example.tunevaultfx.core.Song;
+import com.example.tunevaultfx.util.AppTheme;
+import com.example.tunevaultfx.util.SceneUtil;
 import com.example.tunevaultfx.musicplayer.PlayerStyleConstants;
 import com.example.tunevaultfx.playlist.service.PlaylistPickerService;
 import com.example.tunevaultfx.session.SessionManager;
@@ -229,8 +231,9 @@ public class MiniPlayerController {
         javafx.scene.Node track = slider.lookup(".track");
         if (track == null) return;
         double pct = (total > 0) ? (current * 100.0 / total) : 0;
+        String tail = AppTheme.isLightMode() ? "rgba(15,23,42,0.14)" : "rgba(255,255,255,0.08)";
         track.setStyle(
-            "-fx-background-color: linear-gradient(to right, #8b5cf6 " + pct + "%, rgba(255,255,255,0.08) " + pct + "%);" +
+            "-fx-background-color: linear-gradient(to right, #8b5cf6 " + pct + "%, " + tail + " " + pct + "%);" +
             "-fx-background-radius: 3; -fx-pref-height: 5; -fx-background-insets: 0;");
     }
 
@@ -257,6 +260,7 @@ public class MiniPlayerController {
                 StackPane wrapper = new StackPane();
                 wrapper.getChildren().addAll(root, overlay);
                 scene.setRoot(wrapper);
+                SceneUtil.applySavedTheme(scene);
             }
         } catch (IOException e) {
             e.printStackTrace();
@@ -293,6 +297,7 @@ public class MiniPlayerController {
             StackPane wrapper = new StackPane();
             wrapper.getChildren().addAll(root, overlay);
             scene.setRoot(wrapper);
+            SceneUtil.applySavedTheme(scene);
 
             scene.setOnKeyPressed(e -> {
                 if (e.getCode() == KeyCode.ESCAPE)

@@ -7,14 +7,18 @@ import com.example.tunevaultfx.session.SessionManager;
 import com.example.tunevaultfx.util.AlertUtil;
 import com.example.tunevaultfx.util.CellStyleKit;
 import com.example.tunevaultfx.util.SceneUtil;
+import com.example.tunevaultfx.util.SongContextMenuBuilder;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.concurrent.Task;
 import javafx.fxml.FXML;
 import javafx.scene.Node;
+import javafx.scene.control.Button;
+import javafx.scene.control.ContextMenu;
 import javafx.scene.control.Label;
 import javafx.scene.control.ListCell;
 import javafx.scene.control.ListView;
+import javafx.scene.input.ContextMenuEvent;
 import javafx.scene.input.MouseButton;
 import javafx.scene.layout.*;
 
@@ -28,6 +32,7 @@ import java.util.List;
  */
 public class ArtistProfileController {
 
+    @FXML private Button         backButton;
     @FXML private Label          artistNameLabel;
     @FXML private Label          artistSummaryLabel;
     @FXML private ListView<Song> artistSongsListView;
@@ -55,8 +60,30 @@ public class ArtistProfileController {
         artistSummaryLabel.setText("Loading\u2026");
         artistSongsListView.setItems(artistSongs);
 
+        configureBackButton();
         setupCells();
         loadArtistSongs();
+    }
+
+    private void configureBackButton() {
+        if (backButton == null) {
+            return;
+        }
+        String prev = SceneUtil.peekHistory();
+        if (prev == null) {
+            backButton.setText("Back");
+            return;
+        }
+        backButton.setText(
+                switch (prev) {
+                    case "search-page.fxml" -> "Back to Search";
+                    case "main-menu.fxml" -> "Back to Home";
+                    case "playlists-page.fxml" -> "Back to Library";
+                    case "wrapped-page.fxml" -> "Back to Wrapped";
+                    case "findyourgenre-page.fxml" -> "Back to Genre Quiz";
+                    case "artist-profile-page.fxml" -> "Back";
+                    default -> "Back";
+                });
     }
 
     // ── Background loading ────────────────────────────────────────
@@ -98,9 +125,15 @@ public class ArtistProfileController {
 
     private void setupCells() {
         artistSongsListView.setCellFactory(lv -> new ListCell<>() {
+            private ContextMenu activeSongMenu;
+
             @Override
             protected void updateItem(Song song, boolean empty) {
                 super.updateItem(song, empty);
+                if (activeSongMenu != null) {
+                    activeSongMenu.hide();
+                    activeSongMenu = null;
+                }
                 if (empty || song == null) {
                     setText(null); setGraphic(null);
                     setBackground(Background.EMPTY);
@@ -129,15 +162,45 @@ public class ArtistProfileController {
                 CellStyleKit.markPlaying(row, isPlaying);
 
                 row.setOnMouseClicked(ev -> {
+                    if (ev.getButton() == MouseButton.SECONDARY) {
+                        showSongContextMenu(song, row, ev.getScreenX(), ev.getScreenY());
+                        ev.consume();
+                        return;
+                    }
                     if (ev.getButton() == MouseButton.PRIMARY && ev.getClickCount() == 2) {
                         player.playQueue(artistSongs, artistSongs.indexOf(song), artistName);
                         ev.consume();
                     }
                 });
 
+                row.addEventFilter(
+                        ContextMenuEvent.CONTEXT_MENU_REQUESTED,
+                        ev -> {
+                            Song s = getItem();
+                            if (s == null || isEmpty()) {
+                                return;
+                            }
+                            showSongContextMenu(s, row, ev.getScreenX(), ev.getScreenY());
+                            ev.consume();
+                        });
+
                 setText(null); setGraphic(row);
                 setBackground(Background.EMPTY);
                 setStyle("-fx-background-color: transparent; -fx-padding: 2 0 2 0;");
+            }
+
+            private void showSongContextMenu(Song song, Node anchor, double screenX, double screenY) {
+                if (activeSongMenu != null) {
+                    activeSongMenu.hide();
+                    activeSongMenu = null;
+                }
+                ContextMenu menu =
+                        SongContextMenuBuilder.build(
+                                song,
+                                anchor,
+                                SongContextMenuBuilder.Spec.general());
+                activeSongMenu = menu;
+                menu.show(anchor, screenX, screenY);
             }
 
             @Override public void updateSelected(boolean s) { super.updateSelected(false); }
@@ -147,7 +210,7 @@ public class ArtistProfileController {
     // ── Interactions ──────────────────────────────────────────────
 
     @FXML
-    private void handleBackToSearch(javafx.event.ActionEvent event) throws IOException {
+    private void handleBack(javafx.event.ActionEvent event) throws IOException {
         SceneUtil.goBack((Node) event.getSource());
     }
 }

@@ -41,11 +41,7 @@ public class LoginPageController {
 
             newScene.addEventFilter(KeyEvent.KEY_PRESSED, event -> {
                 if (event.getCode() == KeyCode.ENTER) {
-                    try {
-                        handleLogin(new ActionEvent(usernameField, usernameField));
-                    } catch (IOException e) {
-                        showError("Unable to open the next page.");
-                    }
+                    handleLogin(new ActionEvent(usernameField, usernameField));
                     event.consume();
                 } else if (event.getCode() == KeyCode.ESCAPE) {
                     usernameField.clear();
@@ -61,7 +57,7 @@ public class LoginPageController {
     }
 
     @FXML
-    private void handleLogin(ActionEvent event) throws IOException {
+    private void handleLogin(ActionEvent event) {
         clearStatus();
 
         String loginInput = safeTrim(usernameField.getText());
@@ -88,6 +84,9 @@ public class LoginPageController {
         } catch (SQLException e) {
             e.printStackTrace();
             showError("A database error occurred. Please try again.");
+        } catch (IOException e) {
+            e.printStackTrace();
+            showError("Could not open the home screen. If this persists, restart the app.");
         }
     }
 

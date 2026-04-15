@@ -8,6 +8,7 @@ import com.example.tunevaultfx.session.SessionManager;
 import com.example.tunevaultfx.util.AlertUtil;
 import com.example.tunevaultfx.util.CellStyleKit;
 import com.example.tunevaultfx.util.SceneUtil;
+import com.example.tunevaultfx.util.SongContextMenuBuilder;
 import com.example.tunevaultfx.util.UiMotionUtil;
 import javafx.application.Platform;
 import javafx.animation.PauseTransition;
@@ -18,6 +19,7 @@ import javafx.scene.Node;
 import javafx.scene.control.*;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
+import javafx.scene.input.ContextMenuEvent;
 import javafx.scene.input.MouseButton;
 import javafx.scene.layout.*;
 import javafx.util.Duration;
@@ -99,12 +101,15 @@ public class SearchPageController {
 
     private void setupSongCells() {
         songResultsListView.setCellFactory(lv -> new ListCell<>() {
-            private javafx.stage.Popup activePopup;
+            private ContextMenu activeSongMenu;
 
             @Override
             protected void updateItem(Song song, boolean empty) {
                 super.updateItem(song, empty);
-                if (activePopup != null) { activePopup.hide(); activePopup = null; }
+                if (activeSongMenu != null) {
+                    activeSongMenu.hide();
+                    activeSongMenu = null;
+                }
                 if (empty || song == null) {
                     setText(null); setGraphic(null);
                     setBackground(Background.EMPTY);
@@ -114,7 +119,7 @@ public class SearchPageController {
 
                 StackPane icon = CellStyleKit.iconBox("♫", CellStyleKit.Palette.PURPLE, false);
                 VBox      text = CellStyleKit.songTextBox(
-                        song.title(), song.artist(), song.genre(), SearchPageController.this::openArtistProfile);
+                        song.title(), song.artist(), null, SearchPageController.this::openArtistProfile);
                 Label     dur  = CellStyleKit.duration(song.durationSeconds());
 
                 Button moreBtn = new Button("⋯");
@@ -125,10 +130,15 @@ public class SearchPageController {
                 moreBtn.setFocusTraversable(false);
                 moreBtn.setOnMouseEntered(e -> moreBtn.setStyle("-fx-background-color: rgba(255,255,255,0.09); -fx-text-fill: #a0a0c0; -fx-font-size: 16px; -fx-font-weight: bold; -fx-background-radius: 16; -fx-padding: 0;"));
                 moreBtn.setOnMouseExited(e -> moreBtn.setStyle("-fx-background-color: transparent; -fx-text-fill: #58586e; -fx-font-size: 16px; -fx-font-weight: bold; -fx-background-radius: 16; -fx-padding: 0;"));
-                moreBtn.setOnAction(ev -> {
-                    showSongPopup(song, moreBtn);
-                    ev.consume();
-                });
+                moreBtn.setOnAction(
+                        ev -> {
+                            javafx.geometry.Bounds b =
+                                    moreBtn.localToScreen(moreBtn.getBoundsInLocal());
+                            if (b != null) {
+                                showSongPopup(song, moreBtn, b.getMinX(), b.getMaxY() + 4);
+                            }
+                            ev.consume();
+                        });
 
                 HBox row = CellStyleKit.row(icon, text, new Region() {{ HBox.setHgrow(this, Priority.ALWAYS); }}, dur, moreBtn);
                 CellStyleKit.addHover(row);
@@ -146,46 +156,36 @@ public class SearchPageController {
                     }
                 });
 
+                row.addEventFilter(
+                        ContextMenuEvent.CONTEXT_MENU_REQUESTED,
+                        ev -> {
+                            Song s = getItem();
+                            if (s == null || isEmpty()) {
+                                return;
+                            }
+                            showSongPopup(s, row, ev.getScreenX(), ev.getScreenY());
+                            ev.consume();
+                        });
+
                 setText(null); setGraphic(row);
                 setBackground(Background.EMPTY);
                 setStyle("-fx-background-color: transparent; -fx-padding: 2 0 2 0;");
             }
             @Override public void updateSelected(boolean s) { super.updateSelected(false); }
 
-            private void showSongPopup(Song song, Button anchor) {
-                if (activePopup != null) { activePopup.hide(); activePopup = null; }
-                javafx.stage.Popup popup = new javafx.stage.Popup();
-                popup.setAutoHide(true);
-                popup.setAutoFix(true);
-                popup.setHideOnEscape(true);
-
-                VBox card = new VBox(6);
-                card.setPadding(new javafx.geometry.Insets(8));
-                card.setPrefWidth(200);
-                card.setStyle("-fx-background-color: #16162a; -fx-background-radius: 18; -fx-border-color: rgba(255,255,255,0.12); -fx-border-radius: 18; -fx-border-width: 1; -fx-effect: dropshadow(gaussian,rgba(0,0,0,0.65),28,0,0,10);");
-
-                Button playNextBtn = popupBtn("Play Next");
-                playNextBtn.setOnAction(ev -> { popup.hide(); player.addToQueueNext(song); ev.consume(); });
-
-                card.getChildren().addAll(playNextBtn);
-                popup.getContent().add(card);
-
-                javafx.geometry.Bounds b = anchor.localToScreen(anchor.getBoundsInLocal());
-                if (b != null) { popup.show(anchor, b.getMaxX() - 190, b.getMaxY() + 4); activePopup = popup; }
-            }
-
-            private Button popupBtn(String text) {
-                Button btn = new Button(text);
-                btn.setAlignment(javafx.geometry.Pos.CENTER_LEFT);
-                btn.setMaxWidth(Double.MAX_VALUE);
-                btn.setPrefHeight(38);
-                btn.setFocusTraversable(false);
-                String base  = "-fx-background-color: transparent; -fx-background-radius: 11; -fx-font-size: 13px; -fx-padding: 0 14 0 14; -fx-text-fill: #e0e0f0;";
-                String hover = "-fx-background-color: rgba(255,255,255,0.07); -fx-background-radius: 11; -fx-font-size: 13px; -fx-padding: 0 14 0 14; -fx-text-fill: #e0e0f0;";
-                btn.setStyle(base);
-                btn.setOnMouseEntered(e -> btn.setStyle(hover));
-                btn.setOnMouseExited(e -> btn.setStyle(base));
-                return btn;
+            private void showSongPopup(Song song, javafx.scene.Node anchor, double screenX, double screenY) {
+                if (activeSongMenu != null) {
+                    activeSongMenu.hide();
+                    activeSongMenu = null;
+                }
+                ContextMenu menu =
+                        SongContextMenuBuilder.build(
+                                song,
+                                anchor,
+                                SongContextMenuBuilder.Spec.general());
+                menu.getStyleClass().add("tv-search-song-menu");
+                activeSongMenu = menu;
+                menu.show(anchor, screenX, screenY);
             }
         });
     }
@@ -206,7 +206,8 @@ public class SearchPageController {
                         artist.substring(0, 1).toUpperCase(),
                         CellStyleKit.Palette.ROSE, true);
 
-                VBox text = CellStyleKit.textBox(artist, "Artist");
+                VBox text = new VBox(3, CellStyleKit.primary(artist));
+                HBox.setHgrow(text, Priority.ALWAYS);
                 HBox row  = CellStyleKit.row(avatar, text);
                 CellStyleKit.addHover(row);
 
@@ -239,11 +240,7 @@ public class SearchPageController {
 
                 VBox text = CellStyleKit.textBox(item.getPrimaryText(), item.getSecondaryText());
 
-                Label tag = CellStyleKit.tag(
-                        isSong ? "Song" : "Artist",
-                        isSong ? CellStyleKit.Palette.PURPLE : CellStyleKit.Palette.ROSE);
-
-                HBox row = CellStyleKit.row(icon, text, tag);
+                HBox row = CellStyleKit.row(icon, text);
                 CellStyleKit.addHover(row);
 
                 setText(null); setGraphic(row);
@@ -355,16 +352,11 @@ public class SearchPageController {
     @FXML private void handleClearRecentSearches() {
         SessionManager.clearRecentSearches(); recentSearchesListView.refresh();
     }
-    @FXML
-    private void handleBackToMenu(javafx.event.ActionEvent event) throws IOException {
-        SceneUtil.goBack((Node) event.getSource());
-    }
-
     // ── Helpers ───────────────────────────────────────────────────
 
     private static Label placeholder(String text) {
         Label l = new Label(text);
-        l.setStyle("-fx-text-fill: " + CellStyleKit.TEXT_MUTED + "; -fx-font-size: 13px;");
+        l.setStyle("-fx-text-fill: " + CellStyleKit.getTextMuted() + "; -fx-font-size: 13px;");
         return l;
     }
 

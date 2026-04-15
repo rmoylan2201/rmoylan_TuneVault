@@ -1,5 +1,6 @@
 package com.example.tunevaultfx.playlist;
 
+import com.example.tunevaultfx.core.PlaylistNames;
 import com.example.tunevaultfx.core.Song;
 import com.example.tunevaultfx.db.SongDAO;
 import com.example.tunevaultfx.musicplayer.controller.MusicPlayerController;
@@ -13,10 +14,15 @@ import com.example.tunevaultfx.playlist.service.SongSearchService;
 import com.example.tunevaultfx.recommendation.RecommendationService;
 import com.example.tunevaultfx.session.SessionManager;
 import com.example.tunevaultfx.user.UserProfile;
+import com.example.tunevaultfx.util.AppTheme;
+import com.example.tunevaultfx.util.OverlayTheme;
 import com.example.tunevaultfx.util.SceneUtil;
 import com.example.tunevaultfx.util.UiMotionUtil;
 import javafx.application.Platform;
+import javafx.beans.binding.Bindings;
 import javafx.collections.ListChangeListener;
+import javafx.collections.MapChangeListener;
+import javafx.collections.WeakMapChangeListener;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
@@ -45,6 +51,15 @@ import java.util.List;
  *    mini player which adds/removes from Liked Songs
  */
 public class PlaylistsPageController {
+
+    /** Row height aligned with PlayableSongCell so the page ScrollPane owns vertical scroll. */
+    private static final double PLAYLIST_SONG_ROW_HEIGHT = 58;
+    /** Row height aligned with SuggestedSongCell / playlists-page list density. */
+    private static final double SUGGESTED_SONG_ROW_HEIGHT = 66;
+    private static final double PLAYLIST_LIST_EMPTY_HEIGHT = 168;
+
+    private final ListChangeListener<Song> playlistItemsHeightSync = c -> syncPlaylistListHeight();
+    private final ListChangeListener<Song> suggestedItemsHeightSync = c -> syncSuggestedListHeight();
 
     // ── FXML ─────────────────────────────────────────────────────
     @FXML
@@ -77,6 +92,8 @@ public class PlaylistsPageController {
     private VBox playlistSongsCard;
     @FXML
     private HBox contentRow;
+    @FXML
+    private Button deletePlaylistButton;
 
     // ── Services ──────────────────────────────────────────────────
     private final ObservableList<String> playlistNames = FXCollections.observableArrayList();
@@ -98,6 +115,14 @@ public class PlaylistsPageController {
      */
     private ListChangeListener<Song> activePlaylistListener;
 
+    private final MapChangeListener<String, ObservableList<Song>> playlistKeysChanged =
+            c ->
+                    Platform.runLater(
+                            () -> {
+                                loadPlaylistNames();
+                                playlistListView.refresh();
+                            });
+
     // ─────────────────────────────────────────────────────────────
 
     @FXML
@@ -116,11 +141,26 @@ public class PlaylistsPageController {
         suggestedSongsListView.setFocusTraversable(false);
 
         loadPlaylistNames();
+        profile.getPlaylists().addListener(new WeakMapChangeListener<>(playlistKeysChanged));
         setupPlaylistListCells();
         setupInitialPlaylistSelection();
         setupListeners();
+        deletePlaylistButton
+                .disableProperty()
+                .bind(
+                        Bindings.createBooleanBinding(
+                                () -> {
+                                    String s =
+                                            playlistListView
+                                                    .getSelectionModel()
+                                                    .getSelectedItem();
+                                    return s == null || playlistService.isProtectedPlaylist(s);
+                                },
+                                playlistListView.getSelectionModel().selectedItemProperty()));
         setupSongCells();
         setupSuggestedSongCells();
+        installPlaylistSongsListSizing();
+        installSuggestedSongsListSizing();
         hideSearchPanel();
         hideSuggestionsSection();
 
@@ -209,7 +249,7 @@ public class PlaylistsPageController {
                     return;
                 }
 
-                iconLbl.setText("Liked Songs".equals(name) ? "♥" : "♫");
+                iconLbl.setText(PlaylistNames.glyphForPlaylist(name));
                 nameLbl.setText(name);
 
                 boolean activeSource = isActiveSourcePlaylist(name);
@@ -232,11 +272,16 @@ public class PlaylistsPageController {
             }
 
             private void applySelectionStyle(boolean selected) {
+                boolean light = AppTheme.isLightMode();
                 row.setStyle(selected
-                        ? "-fx-background-color: rgba(139,92,246,0.18); -fx-background-radius: 12;"
+                        ? "-fx-background-color: "
+                        + (light ? "rgba(124,58,237,0.16)" : "rgba(139,92,246,0.18)")
+                        + "; -fx-background-radius: 12;"
                         : "-fx-background-color: transparent; -fx-background-radius: 12;");
-                nameLbl.setStyle("-fx-font-size: 13px; -fx-text-fill: "
-                        + (selected ? "#c4b5fd" : "#e2e8f0") + ";");
+                String nameColor = selected
+                        ? (light ? "#5b21b6" : "#c4b5fd")
+                        : (light ? "#1e293b" : "#e2e8f0");
+                nameLbl.setStyle("-fx-font-size: 13px; -fx-text-fill: " + nameColor + ";");
             }
         });
     }
@@ -274,11 +319,15 @@ public class PlaylistsPageController {
             refreshSearchResultsCellFactory();
         });
 
-        // Like/unlike from mini player → the song goes into/out of Liked Songs.
-        // If "Liked Songs" is the selected playlist, its ObservableList changes and
-        // the playlist listener handles it. For all other playlists this covers it.
-        player.currentSongLikedProperty().addListener((obs, o, n) ->
-                Platform.runLater(this::refreshSuggestions));
+        // Like/unlike from mini player → refresh suggestions (taste / Liked Songs changed).
+        // When only the *current track* changes, the heart updates to match the new song;
+        // that is not a user like action and must not re-run recommendations (list would jump).
+        player.currentSongLikedProperty().addListener((obs, o, n) -> {
+            if (player.isApplyingTrackDerivedLikedState()) {
+                return;
+            }
+            Platform.runLater(this::refreshSuggestions);
+        });
 
         player.currentSongProperty().addListener((obs, o, n) -> Platform.runLater(() -> {
             playlistListView.refresh();
@@ -345,7 +394,8 @@ public class PlaylistsPageController {
                 new SuggestedSongCell(
                         this::addSuggestedSongToPlaylist,
                         this::playSuggestedSong,
-                        this::openArtistProfile));
+                        this::openArtistProfile,
+                        this::showAddToPlaylistPicker));
     }
 
     private void refreshSearchResultsCellFactory() {
@@ -354,7 +404,8 @@ public class PlaylistsPageController {
                         this::isSongInSelectedPlaylist,
                         this::toggleSongInSelectedPlaylist,
                         this::playSongFromSearchPanel,
-                        this::openArtistProfile));
+                        this::openArtistProfile,
+                        this::showAddToPlaylistPicker));
     }
 
     // ── Suggestion logic ──────────────────────────────────────────
@@ -370,28 +421,86 @@ public class PlaylistsPageController {
         String username = SessionManager.getCurrentUsername();
 
         ObservableList<Song> suggestions =
-                recommendationService.getSuggestedSongsForPlaylist(username, songs, 4);
+                recommendationService.getSuggestedSongsForPlaylist(username, songs, 12);
 
         if (suggestions == null || suggestions.isEmpty()) {
             hideSuggestionsSection();
             return;
         }
 
-        suggestedSongsListView.setItems(suggestions);
         showSuggestionsSection(selected);
+        suggestedSongsListView.setItems(suggestions);
+        syncSuggestedListHeight();
     }
 
     private void showSuggestionsSection(String playlistName) {
         suggestionsSection.setVisible(true);
         suggestionsSection.setManaged(true);
-        if (suggestionSubtitleLabel != null)
+        if (suggestionSubtitleLabel != null) {
             suggestionSubtitleLabel.setText(
-                    "Based on \u201c" + playlistName + "\u201d and your listening history");
+                    "Below your tracks \u2014 based on \u201c"
+                            + playlistName
+                            + "\u201d and your listening history");
+        }
     }
 
     private void hideSuggestionsSection() {
         suggestionsSection.setVisible(false);
         suggestionsSection.setManaged(false);
+    }
+
+    private void installPlaylistSongsListSizing() {
+        playlistSongsListView.setFixedCellSize(PLAYLIST_SONG_ROW_HEIGHT);
+        playlistSongsListView.itemsProperty().addListener((obs, oldList, newList) -> {
+            if (oldList != null) {
+                oldList.removeListener(playlistItemsHeightSync);
+            }
+            if (newList != null) {
+                newList.addListener(playlistItemsHeightSync);
+            }
+            syncPlaylistListHeight();
+        });
+        ObservableList<Song> initial = playlistSongsListView.getItems();
+        if (initial != null) {
+            initial.addListener(playlistItemsHeightSync);
+        }
+        syncPlaylistListHeight();
+    }
+
+    private void installSuggestedSongsListSizing() {
+        suggestedSongsListView.setFixedCellSize(SUGGESTED_SONG_ROW_HEIGHT);
+        suggestedSongsListView.itemsProperty().addListener((obs, oldList, newList) -> {
+            if (oldList != null) {
+                oldList.removeListener(suggestedItemsHeightSync);
+            }
+            if (newList != null) {
+                newList.addListener(suggestedItemsHeightSync);
+            }
+            syncSuggestedListHeight();
+        });
+        ObservableList<Song> initial = suggestedSongsListView.getItems();
+        if (initial != null) {
+            initial.addListener(suggestedItemsHeightSync);
+        }
+        syncSuggestedListHeight();
+    }
+
+    private void syncPlaylistListHeight() {
+        ObservableList<Song> items = playlistSongsListView.getItems();
+        int n = items == null ? 0 : items.size();
+        double h = n == 0 ? PLAYLIST_LIST_EMPTY_HEIGHT : n * PLAYLIST_SONG_ROW_HEIGHT + 4;
+        playlistSongsListView.setPrefHeight(h);
+        playlistSongsListView.setMinHeight(h);
+        playlistSongsListView.setMaxHeight(h);
+    }
+
+    private void syncSuggestedListHeight() {
+        ObservableList<Song> items = suggestedSongsListView.getItems();
+        int n = items == null ? 0 : items.size();
+        double h = n == 0 ? SUGGESTED_SONG_ROW_HEIGHT + 4 : n * SUGGESTED_SONG_ROW_HEIGHT + 4;
+        suggestedSongsListView.setPrefHeight(h);
+        suggestedSongsListView.setMinHeight(h);
+        suggestedSongsListView.setMaxHeight(h);
     }
 
     private void addSuggestedSongToPlaylist(Song song) {
@@ -509,108 +618,103 @@ public class PlaylistsPageController {
         if (scene == null) return;
 
         StackPane backdrop = new StackPane();
-        backdrop.setStyle("-fx-background-color: rgba(3,2,14,0.72);");
+        backdrop.setStyle(OverlayTheme.backdrop());
 
-        VBox card = new VBox(16);
-        card.setMaxWidth(380);
-        card.setPadding(new javafx.geometry.Insets(28, 28, 22, 28));
-        card.setStyle(
-            "-fx-background-color: #0f0f1c;" +
-            "-fx-background-radius: 24;" +
-            "-fx-border-color: rgba(139,92,246,0.16);" +
-            "-fx-border-radius: 24; -fx-border-width: 1;" +
-            "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.70), 48, 0, 0, 16);");
+        VBox card = new VBox(8);
+        card.setMaxWidth(320);
+        card.setMaxHeight(220);
+        card.setMinHeight(Region.USE_PREF_SIZE);
+        card.setPadding(new Insets(14, 18, 14, 18));
+        card.setStyle(OverlayTheme.card());
         card.setOnMouseClicked(e -> e.consume());
 
         Label title = new Label("Create Playlist");
-        title.setStyle("-fx-font-size: 20px; -fx-font-weight: bold; -fx-text-fill: #eeeef6;");
-
-        Label sub = new Label("Enter a name for your new playlist");
-        sub.setStyle("-fx-font-size: 13px; -fx-text-fill: #9d9db8;");
+        title.setStyle(OverlayTheme.title());
 
         TextField nameField = new TextField();
         nameField.setPromptText("Playlist name");
-        nameField.setPrefHeight(44);
+        nameField.setStyle(OverlayTheme.createPlaylistField());
+        nameField.setPrefHeight(38);
+        nameField.setMaxHeight(38);
 
         Label errorLabel = new Label();
         errorLabel.setStyle("-fx-font-size: 12px; -fx-text-fill: #ef4444;");
         errorLabel.setManaged(false);
         errorLabel.setVisible(false);
-
-        Button createBtn = new Button("Create");
-        createBtn.setMaxWidth(Double.MAX_VALUE);
-        createBtn.setStyle(
-            "-fx-background-color: #8b5cf6; -fx-text-fill: white;" +
-            "-fx-font-size: 14px; -fx-font-weight: bold;" +
-            "-fx-background-radius: 14; -fx-padding: 12 24 12 24;" +
-            "-fx-cursor: hand;" +
-            "-fx-effect: dropshadow(gaussian, rgba(139,92,246,0.45), 14, 0, 0, 4);");
-        createBtn.setOnMouseEntered(e -> createBtn.setStyle(
-            "-fx-background-color: #7c3aed; -fx-text-fill: white;" +
-            "-fx-font-size: 14px; -fx-font-weight: bold;" +
-            "-fx-background-radius: 14; -fx-padding: 12 24 12 24; -fx-cursor: hand;"));
-        createBtn.setOnMouseExited(e -> createBtn.setStyle(
-            "-fx-background-color: #8b5cf6; -fx-text-fill: white;" +
-            "-fx-font-size: 14px; -fx-font-weight: bold;" +
-            "-fx-background-radius: 14; -fx-padding: 12 24 12 24; -fx-cursor: hand;" +
-            "-fx-effect: dropshadow(gaussian, rgba(139,92,246,0.45), 14, 0, 0, 4);"));
+        errorLabel.setWrapText(true);
+        errorLabel.setMaxHeight(44);
 
         Button cancelBtn = new Button("Cancel");
-        cancelBtn.setMaxWidth(Double.MAX_VALUE);
-        cancelBtn.setStyle(
-            "-fx-background-color: rgba(255,255,255,0.06); -fx-text-fill: #9d9db8;" +
-            "-fx-font-size: 14px; -fx-font-weight: bold;" +
-            "-fx-background-radius: 14; -fx-padding: 10 24 10 24; -fx-cursor: hand;" +
-            "-fx-border-color: rgba(255,255,255,0.08); -fx-border-radius: 14; -fx-border-width: 1;");
-        cancelBtn.setOnMouseEntered(e -> cancelBtn.setStyle(
-            "-fx-background-color: rgba(255,255,255,0.10); -fx-text-fill: #eeeef6;" +
-            "-fx-font-size: 14px; -fx-font-weight: bold;" +
-            "-fx-background-radius: 14; -fx-padding: 10 24 10 24; -fx-cursor: hand;" +
-            "-fx-border-color: rgba(255,255,255,0.14); -fx-border-radius: 14; -fx-border-width: 1;"));
-        cancelBtn.setOnMouseExited(e -> cancelBtn.setStyle(
-            "-fx-background-color: rgba(255,255,255,0.06); -fx-text-fill: #9d9db8;" +
-            "-fx-font-size: 14px; -fx-font-weight: bold;" +
-            "-fx-background-radius: 14; -fx-padding: 10 24 10 24; -fx-cursor: hand;" +
-            "-fx-border-color: rgba(255,255,255,0.08); -fx-border-radius: 14; -fx-border-width: 1;"));
+        cancelBtn.setStyle(OverlayTheme.secondaryButton());
+        cancelBtn.setOnMouseEntered(e -> cancelBtn.setStyle(OverlayTheme.secondaryButtonHover()));
+        cancelBtn.setOnMouseExited(e -> cancelBtn.setStyle(OverlayTheme.secondaryButton()));
 
-        Runnable closeOverlay = () -> {
-            javafx.animation.FadeTransition ft = new javafx.animation.FadeTransition(
-                javafx.util.Duration.millis(140), backdrop);
-            ft.setToValue(0);
-            ft.setOnFinished(e -> {
-                if (scene.getRoot() instanceof StackPane sp) sp.getChildren().remove(backdrop);
-            });
-            ft.play();
-        };
+        Button createBtn = new Button("Create");
+        createBtn.setStyle(OverlayTheme.primaryButton());
+        createBtn.setOnMouseEntered(e -> createBtn.setStyle(OverlayTheme.primaryButtonHover()));
+        createBtn.setOnMouseExited(e -> createBtn.setStyle(OverlayTheme.primaryButton()));
 
-        Runnable doCreate = () -> {
-            String name = nameField.getText() == null ? "" : nameField.getText().trim();
-            if (name.isEmpty()) {
-                errorLabel.setText("Playlist name cannot be empty.");
-                errorLabel.setVisible(true); errorLabel.setManaged(true);
-                return;
-            }
-            if (!playlistService.createPlaylist(profile, name)) {
-                errorLabel.setText("A playlist with that name already exists.");
-                errorLabel.setVisible(true); errorLabel.setManaged(true);
-                return;
-            }
-            loadPlaylistNames();
-            playlistListView.getSelectionModel().select(name);
-            closeOverlay.run();
-        };
+        HBox actions = new HBox(10, cancelBtn, createBtn);
+        actions.setAlignment(Pos.CENTER_RIGHT);
+        HBox.setHgrow(createBtn, Priority.ALWAYS);
+        createBtn.setMaxWidth(Double.MAX_VALUE);
+
+        Runnable closeOverlay =
+                () -> {
+                    javafx.animation.FadeTransition ft =
+                            new javafx.animation.FadeTransition(javafx.util.Duration.millis(140), backdrop);
+                    ft.setToValue(0);
+                    ft.setOnFinished(
+                            e -> {
+                                javafx.scene.Parent p = backdrop.getParent();
+                                if (p instanceof StackPane sp) {
+                                    sp.getChildren().remove(backdrop);
+                                }
+                            });
+                    ft.play();
+                };
+
+        Runnable doCreate =
+                () -> {
+                    String name = nameField.getText() == null ? "" : nameField.getText().trim();
+                    if (name.isEmpty()) {
+                        errorLabel.setText("Playlist name cannot be empty.");
+                        errorLabel.setVisible(true);
+                        errorLabel.setManaged(true);
+                        return;
+                    }
+                    if (!playlistService.createPlaylist(profile, name)) {
+                        errorLabel.setText("A playlist with that name already exists.");
+                        errorLabel.setVisible(true);
+                        errorLabel.setManaged(true);
+                        return;
+                    }
+                    loadPlaylistNames();
+                    playlistListView.getSelectionModel().select(name);
+                    closeOverlay.run();
+                };
 
         createBtn.setOnAction(e -> doCreate.run());
         cancelBtn.setOnAction(e -> closeOverlay.run());
         backdrop.setOnMouseClicked(e -> closeOverlay.run());
 
-        nameField.setOnKeyPressed(e -> {
-            if (e.getCode() == javafx.scene.input.KeyCode.ENTER) doCreate.run();
-            if (e.getCode() == javafx.scene.input.KeyCode.ESCAPE) closeOverlay.run();
-        });
+        backdrop.addEventFilter(
+                KeyEvent.KEY_PRESSED,
+                e -> {
+                    if (e.getCode() == KeyCode.ESCAPE) {
+                        closeOverlay.run();
+                        e.consume();
+                    }
+                });
 
-        card.getChildren().addAll(title, sub, nameField, errorLabel, createBtn, cancelBtn);
-        StackPane.setAlignment(card, javafx.geometry.Pos.CENTER);
+        nameField.setOnKeyPressed(
+                e -> {
+                    if (e.getCode() == KeyCode.ENTER) doCreate.run();
+                    if (e.getCode() == KeyCode.ESCAPE) closeOverlay.run();
+                });
+
+        card.getChildren().addAll(title, nameField, errorLabel, actions);
+        StackPane.setAlignment(card, Pos.CENTER);
         backdrop.getChildren().add(card);
 
         if (scene.getRoot() instanceof StackPane sp) {
@@ -619,15 +723,16 @@ public class PlaylistsPageController {
             StackPane wrapper = new StackPane();
             wrapper.getChildren().addAll(scene.getRoot(), backdrop);
             scene.setRoot(wrapper);
+            SceneUtil.applySavedTheme(scene);
         }
 
         backdrop.setOpacity(0);
-        card.setTranslateY(40);
-        javafx.animation.FadeTransition fade = new javafx.animation.FadeTransition(
-            javafx.util.Duration.millis(180), backdrop);
+        card.setTranslateY(20);
+        javafx.animation.FadeTransition fade =
+                new javafx.animation.FadeTransition(javafx.util.Duration.millis(180), backdrop);
         fade.setToValue(1);
-        javafx.animation.TranslateTransition slide = new javafx.animation.TranslateTransition(
-            javafx.util.Duration.millis(220), card);
+        javafx.animation.TranslateTransition slide =
+                new javafx.animation.TranslateTransition(javafx.util.Duration.millis(200), card);
         slide.setToY(0);
         new javafx.animation.ParallelTransition(fade, slide).play();
 
@@ -641,17 +746,122 @@ public class PlaylistsPageController {
             com.example.tunevaultfx.util.ToastUtil.info(contentRow.getScene(), "Please select a playlist to delete.");
             return;
         }
-        if (!playlistService.deletePlaylist(profile, selected)) {
-            com.example.tunevaultfx.util.ToastUtil.error(contentRow.getScene(), "Liked Songs cannot be deleted.");
+        if (playlistService.isProtectedPlaylist(selected)) {
+            com.example.tunevaultfx.util.ToastUtil.info(
+                    contentRow.getScene(),
+                    PlaylistNames.LIKED_SONGS
+                            + " can\u2019t be deleted \u2014 it\u2019s a default playlist for songs you like.");
             return;
         }
-        loadPlaylistNames();
-        if (!playlistNames.isEmpty()) playlistListView.getSelectionModel().selectFirst();
+        showDeletePlaylistConfirmOverlay(selected);
     }
 
-    @FXML
-    private void handleBackToMenu(javafx.event.ActionEvent event) throws IOException {
-        SceneUtil.goBack((Node) event.getSource());
+    private void showDeletePlaylistConfirmOverlay(String playlistName) {
+        Scene scene = contentRow.getScene();
+        if (scene == null) {
+            return;
+        }
+
+        StackPane backdrop = new StackPane();
+        backdrop.setStyle(OverlayTheme.backdrop());
+
+        VBox card = new VBox(10);
+        card.setMaxWidth(380);
+        card.setMaxHeight(260);
+        card.setMinHeight(Region.USE_PREF_SIZE);
+        card.setPadding(new Insets(16, 20, 16, 20));
+        card.setStyle(OverlayTheme.card());
+        card.setOnMouseClicked(e -> e.consume());
+
+        Label title = new Label("Delete playlist?");
+        title.setStyle(OverlayTheme.title());
+
+        Label msg =
+                new Label(
+                        "Are you sure you want to delete \u201c"
+                                + playlistName
+                                + "\u201d? This cannot be undone.");
+        msg.setWrapText(true);
+        msg.setStyle(OverlayTheme.subtitle());
+
+        Button cancelBtn = new Button("Cancel");
+        cancelBtn.setStyle(OverlayTheme.secondaryButton());
+        cancelBtn.setOnMouseEntered(e -> cancelBtn.setStyle(OverlayTheme.secondaryButtonHover()));
+        cancelBtn.setOnMouseExited(e -> cancelBtn.setStyle(OverlayTheme.secondaryButton()));
+
+        Button deleteBtn = new Button("Delete");
+        deleteBtn.setStyle(OverlayTheme.dangerButton());
+        deleteBtn.setOnMouseEntered(e -> deleteBtn.setStyle(OverlayTheme.dangerButtonHover()));
+        deleteBtn.setOnMouseExited(e -> deleteBtn.setStyle(OverlayTheme.dangerButton()));
+
+        HBox actions = new HBox(10, cancelBtn, deleteBtn);
+        actions.setAlignment(Pos.CENTER_RIGHT);
+        HBox.setHgrow(deleteBtn, Priority.ALWAYS);
+        deleteBtn.setMaxWidth(Double.MAX_VALUE);
+
+        Runnable closeOverlay =
+                () -> {
+                    javafx.animation.FadeTransition ft =
+                            new javafx.animation.FadeTransition(javafx.util.Duration.millis(140), backdrop);
+                    ft.setToValue(0);
+                    ft.setOnFinished(
+                            e -> {
+                                javafx.scene.Parent p = backdrop.getParent();
+                                if (p instanceof StackPane sp) {
+                                    sp.getChildren().remove(backdrop);
+                                }
+                            });
+                    ft.play();
+                };
+
+        cancelBtn.setOnAction(e -> closeOverlay.run());
+        deleteBtn.setOnAction(
+                e -> {
+                    if (!playlistService.deletePlaylist(profile, playlistName)) {
+                        com.example.tunevaultfx.util.ToastUtil.error(
+                                scene, "This playlist cannot be deleted.");
+                    } else {
+                        loadPlaylistNames();
+                        if (!playlistNames.isEmpty()) {
+                            playlistListView.getSelectionModel().selectFirst();
+                        }
+                    }
+                    closeOverlay.run();
+                    e.consume();
+                });
+        backdrop.setOnMouseClicked(e -> closeOverlay.run());
+
+        backdrop.addEventFilter(
+                KeyEvent.KEY_PRESSED,
+                e -> {
+                    if (e.getCode() == KeyCode.ESCAPE) {
+                        closeOverlay.run();
+                        e.consume();
+                    }
+                });
+
+        card.getChildren().addAll(title, msg, actions);
+        StackPane.setAlignment(card, Pos.CENTER);
+        backdrop.getChildren().add(card);
+
+        if (scene.getRoot() instanceof StackPane sp) {
+            sp.getChildren().add(backdrop);
+        } else {
+            StackPane wrapper = new StackPane();
+            wrapper.getChildren().addAll(scene.getRoot(), backdrop);
+            scene.setRoot(wrapper);
+            SceneUtil.applySavedTheme(scene);
+        }
+
+        backdrop.setOpacity(0);
+        card.setTranslateY(20);
+        javafx.animation.FadeTransition fade =
+                new javafx.animation.FadeTransition(javafx.util.Duration.millis(180), backdrop);
+        fade.setToValue(1);
+        javafx.animation.TranslateTransition slide =
+                new javafx.animation.TranslateTransition(javafx.util.Duration.millis(200), card);
+        slide.setToY(0);
+        new javafx.animation.ParallelTransition(fade, slide).play();
     }
 
     // ── UI update ─────────────────────────────────────────────────

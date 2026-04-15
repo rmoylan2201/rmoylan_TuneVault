@@ -60,6 +60,7 @@ public final class ToastUtil {
             StackPane wrapper = new StackPane();
             wrapper.getChildren().addAll(scene.getRoot(), toast);
             scene.setRoot(wrapper);
+            SceneUtil.applySavedTheme(scene);
             animate(toast, wrapper);
         }
     }

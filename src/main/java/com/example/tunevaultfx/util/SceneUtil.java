@@ -1,5 +1,6 @@
 package com.example.tunevaultfx.util;
 
+import javafx.application.Platform;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Node;
 import javafx.scene.Parent;
@@ -9,6 +10,7 @@ import javafx.stage.Stage;
 import java.io.IOException;
 import java.util.ArrayDeque;
 import java.util.Deque;
+import java.util.prefs.Preferences;
 
 /**
  * Centralized scene switching with navigation history.
@@ -19,6 +21,8 @@ public final class SceneUtil {
 
     private static final String CSS_PATH  = "/com/example/tunevaultfx/app.css";
     private static final String FXML_BASE = "/com/example/tunevaultfx/";
+    private static final String PREF_NODE_UI = "com/example/tunevaultfx/ui";
+    private static final String PREF_THEME_LIGHT = "themeLight";
 
     private static final Deque<String> history = new ArrayDeque<>();
     private static String currentPage = null;
@@ -63,6 +67,42 @@ public final class SceneUtil {
         return !history.isEmpty();
     }
 
+    /**
+     * Page on top of the back stack (where {@link #goBack} would return), without removing it.
+     * Used e.g. to highlight the correct sidebar section while on the artist profile.
+     */
+    public static String peekHistory() {
+        return history.isEmpty() ? null : history.peek();
+    }
+
+    /** Current FXML filename (e.g. {@code "search-page.fxml"}), or null before first navigation. */
+    public static String getCurrentPage() {
+        return currentPage;
+    }
+
+    /**
+     * Applies saved light/dark preference to the scene root (style class + {@link AppTheme}).
+     * Does <strong>not</strong> refresh every {@link javafx.scene.control.ListView} — doing that on
+     * every navigation caused a visible one-frame flicker. Call {@link AppTheme#refreshAllListViews}
+     * only after the user toggles appearance.
+     * <p>
+     * Call again after code replaces {@link Scene#getRoot()} with an overlay {@code StackPane}
+     * wrapper; {@code theme-light} must live on the actual scene root so {@code .root.theme-light}
+     * CSS selectors keep matching.
+     */
+    public static void applySavedTheme(Scene scene) {
+        if (scene == null || scene.getRoot() == null) {
+            return;
+        }
+        boolean light = Preferences.userRoot().node(PREF_NODE_UI).getBoolean(PREF_THEME_LIGHT, false);
+        AppTheme.setLightMode(light);
+        Parent root = scene.getRoot();
+        root.getStyleClass().removeAll("theme-light");
+        if (light) {
+            root.getStyleClass().add("theme-light");
+        }
+    }
+
     private static void loadScene(Node sourceNode, String fxmlFile) throws IOException {
         Stage stage = (Stage) sourceNode.getScene().getWindow();
         Scene scene = stage.getScene();
@@ -77,5 +117,6 @@ public final class SceneUtil {
         }
 
         scene.setRoot(root);
+        applySavedTheme(scene);
     }
 }

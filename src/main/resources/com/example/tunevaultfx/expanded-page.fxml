@@ -81,9 +81,8 @@
 
                                 <Hyperlink fx:id="artistLink"
                                            text=""
-                                           styleClass="heading-md"
-                                           onAction="#handleOpenArtistProfile"
-                                           style="-fx-text-fill: #9d9db8;" />
+                                           styleClass="heading-md expanded-artist-link"
+                                           onAction="#handleOpenArtistProfile" />
 
                                 <Label fx:id="albumLabel"
                                        text="Album: -"
@@ -102,8 +101,7 @@
                                     <Region HBox.hgrow="ALWAYS" />
                                     <Label fx:id="timeLabel"
                                            text="0:00 / 0:00"
-                                           styleClass="body"
-                                           style="-fx-font-weight: bold; -fx-text-fill: #9d9db8;" />
+                                           styleClass="body expanded-time-label" />
                                 </HBox>
                             </VBox>
 

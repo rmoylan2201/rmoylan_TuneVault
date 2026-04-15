@@ -11,24 +11,13 @@
             minWidth="1180.0" minHeight="780.0"
             styleClass="page-bg">
 
-    <!-- ── TOP ───────────────────────────────────── -->
     <top>
-        <HBox alignment="CENTER_LEFT" spacing="12" styleClass="page-header">
-            <Button text="← Back"
-                    onAction="#handleBackToMenu"
-                    styleClass="btn-nav" />
-
-            <StackPane HBox.hgrow="ALWAYS" alignment="CENTER">
-                <HBox alignment="CENTER" spacing="10">
-                    <Label text="🎯" style="-fx-font-size: 22px;" />
-                    <Label text="Find Your Genre" styleClass="heading-xl" />
-                </HBox>
-            </StackPane>
-
-            <Region prefWidth="110" />
-        </HBox>
+        <fx:include source="app-top-bar.fxml"/>
     </top>
 
+    <left>
+        <fx:include source="app-sidebar.fxml"/>
+    </left>
     <!-- ── CENTER: Quiz ───────────────────────────── -->
     <center>
         <ScrollPane fitToWidth="true" hbarPolicy="NEVER" vbarPolicy="AS_NEEDED">

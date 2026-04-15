@@ -2,7 +2,6 @@
 
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
-<?import java.lang.String?>
 
 <BorderPane xmlns="http://javafx.com/javafx/21"
             xmlns:fx="http://javafx.com/fxml/1"
@@ -11,168 +10,67 @@
             minWidth="1180.0" minHeight="780.0"
             styleClass="page-bg">
 
-    <!-- ── TOP HEADER ──────────────────────────────────────────── -->
     <top>
-        <HBox alignment="CENTER_LEFT" styleClass="page-header">
-
-            <HBox spacing="14" alignment="CENTER_LEFT">
-                <StackPane prefWidth="46" prefHeight="46" styleClass="logo-icon">
-                    <Label text="♫" style="-fx-font-size: 22px; -fx-text-fill: #eeeef6;" />
-                </StackPane>
-                <VBox spacing="2">
-                    <Label text="TuneVault" styleClass="heading-lg" />
-                    <Label fx:id="welcomeLabel" text="Welcome" styleClass="body-sm" />
-                </VBox>
-            </HBox>
-
-            <Region HBox.hgrow="ALWAYS" />
-
-            <Button text="Log out"
-                    onAction="#handleLogout"
-                    styleClass="btn-rose-soft" />
-        </HBox>
+        <fx:include source="app-top-bar.fxml"/>
     </top>
 
-    <!-- ── CENTER: Feature grid ────────────────────────────────── -->
+    <left>
+        <fx:include source="app-sidebar.fxml"/>
+    </left>
+
     <center>
         <ScrollPane fitToWidth="true" hbarPolicy="NEVER" vbarPolicy="AS_NEEDED">
             <content>
-                <VBox fx:id="menuContent" alignment="CENTER" spacing="22"
-                      styleClass="page-content">
+                <VBox fx:id="menuContent" spacing="26" styleClass="page-content">
 
-                    <VBox alignment="CENTER" spacing="6">
-                        <Label text="What would you like to do?" styleClass="heading-xl" />
-                        <Label text="Choose a feature to get started" styleClass="body-sm" />
+                    <!-- Hero -->
+                    <VBox fx:id="homeHeroSection" spacing="8" styleClass="home-hero">
+                        <Label fx:id="homeGreetingLabel" text="Welcome back" styleClass="heading-2xl"/>
+                        <Label fx:id="homeStatsLabel" text="" styleClass="body-sm"/>
                     </VBox>
 
-                    <!-- 2×2 grid -->
-                    <GridPane fx:id="featureGrid" hgap="18" vgap="18" alignment="CENTER">
-                        <columnConstraints>
-                            <ColumnConstraints prefWidth="576" />
-                            <ColumnConstraints prefWidth="576" />
-                        </columnConstraints>
-                        <rowConstraints>
-                            <RowConstraints prefHeight="210" />
-                            <RowConstraints prefHeight="210" />
-                        </rowConstraints>
-                        <children>
+                    <!-- Libraries / quick shortcuts (sidebar has full list) -->
+                    <VBox fx:id="homeLibrariesSection" spacing="12" styleClass="home-libraries">
+                        <VBox spacing="4">
+                            <HBox alignment="CENTER_LEFT" spacing="14">
+                                <VBox spacing="2" HBox.hgrow="ALWAYS">
+                                    <Label text="Jump back in" styleClass="heading-md"/>
+                                    <Label text="Your playlists also live in the left sidebar, Spotify-style."
+                                           styleClass="caption" wrapText="true"/>
+                                </VBox>
+                                <Button text="Open Library" onAction="#openPlaylistsPage" styleClass="btn-accent-soft"/>
+                            </HBox>
+                        </VBox>
+                        <FlowPane fx:id="playlistChipsContainer" styleClass="home-playlist-grid"
+                                  hgap="12" vgap="12"/>
+                        <Label fx:id="noPlaylistsHint" managed="false" visible="false"
+                               text="Create a playlist from Library to see it here."
+                               styleClass="caption"/>
+                    </VBox>
 
-                            <!-- ▸ SEARCH ────────────────────────────────── -->
-                            <VBox fx:id="searchCard" GridPane.columnIndex="0" GridPane.rowIndex="0"
-                                  spacing="0">
-                                <styleClass>
-                                    <String fx:value="card-elevated" />
-                                    <String fx:value="card-blue" />
-                                </styleClass>
-                                <HBox spacing="16" alignment="CENTER_LEFT">
-                                    <StackPane>
-                                        <styleClass>
-                                            <String fx:value="icon-box" />
-                                            <String fx:value="icon-box-blue" />
-                                        </styleClass>
-                                        <Label text="🔍" style="-fx-font-size: 20px;" />
-                                    </StackPane>
-                                    <VBox spacing="4">
-                                        <Label text="Search" styleClass="heading-lg" />
-                                        <Label text="Songs, artists, albums &amp; genres" styleClass="body-sm" />
-                                    </VBox>
-                                </HBox>
-                                <Region VBox.vgrow="ALWAYS" />
-                                <Button text="Open Search  →"
-                                        onAction="#openSearchPage"
-                                        maxWidth="Infinity" prefHeight="44"
-                                        styleClass="btn-blue-soft" />
+                    <!-- Discovery row -->
+                    <HBox fx:id="homeFeedRow" spacing="20" alignment="TOP_LEFT">
+                        <VBox fx:id="forYouFeedCard" spacing="12" styleClass="card" HBox.hgrow="ALWAYS" minWidth="320">
+                            <VBox spacing="4">
+                                <Label text="Picked for you" styleClass="heading-md"/>
+                                <Label text="Personal picks from your taste profile" styleClass="caption"/>
                             </VBox>
-
-                            <!-- ▸ PLAYLISTS ──────────────────────────────── -->
-                            <VBox fx:id="playlistsCard" GridPane.columnIndex="1" GridPane.rowIndex="0"
-                                  spacing="0">
-                                <styleClass>
-                                    <String fx:value="card-elevated" />
-                                    <String fx:value="card-violet" />
-                                </styleClass>
-                                <HBox spacing="16" alignment="CENTER_LEFT">
-                                    <StackPane>
-                                        <styleClass>
-                                            <String fx:value="icon-box" />
-                                            <String fx:value="icon-box-violet" />
-                                        </styleClass>
-                                        <Label text="🎵" style="-fx-font-size: 20px;" />
-                                    </StackPane>
-                                    <VBox spacing="4">
-                                        <Label text="Playlists" styleClass="heading-lg" />
-                                        <Label text="Create and manage your music library" styleClass="body-sm" />
-                                    </VBox>
-                                </HBox>
-                                <Region VBox.vgrow="ALWAYS" />
-                                <Button text="Open Playlists  →"
-                                        onAction="#openPlaylistsPage"
-                                        maxWidth="Infinity" prefHeight="44"
-                                        styleClass="btn-violet-soft" />
+                            <ListView fx:id="forYouListView" prefHeight="300" minHeight="200" VBox.vgrow="ALWAYS"/>
+                        </VBox>
+                        <VBox fx:id="freshTracksFeedCard" spacing="12" styleClass="card" HBox.hgrow="ALWAYS" minWidth="320">
+                            <VBox spacing="4">
+                                <Label text="Fresh in the vault" styleClass="heading-md"/>
+                                <Label text="Newest tracks in the catalog" styleClass="caption"/>
                             </VBox>
-
-                            <!-- ▸ WRAPPED ────────────────────────────────── -->
-                            <VBox fx:id="wrappedCard" GridPane.columnIndex="0" GridPane.rowIndex="1"
-                                  spacing="0">
-                                <styleClass>
-                                    <String fx:value="card-elevated" />
-                                    <String fx:value="card-orange" />
-                                </styleClass>
-                                <HBox spacing="16" alignment="CENTER_LEFT">
-                                    <StackPane>
-                                        <styleClass>
-                                            <String fx:value="icon-box" />
-                                            <String fx:value="icon-box-orange" />
-                                        </styleClass>
-                                        <Label text="📊" style="-fx-font-size: 20px;" />
-                                    </StackPane>
-                                    <VBox spacing="4">
-                                        <Label text="Wrapped" styleClass="heading-lg" />
-                                        <Label text="Your top songs, artists &amp; listening stats" styleClass="body-sm" />
-                                    </VBox>
-                                </HBox>
-                                <Region VBox.vgrow="ALWAYS" />
-                                <Button text="Open Wrapped  →"
-                                        onAction="#openWrappedPage"
-                                        maxWidth="Infinity" prefHeight="44"
-                                        styleClass="btn-orange-soft" />
-                            </VBox>
-
-                            <!-- ▸ FIND YOUR GENRE ───────────────────────── -->
-                            <VBox fx:id="genreCard" GridPane.columnIndex="1" GridPane.rowIndex="1"
-                                  spacing="0">
-                                <styleClass>
-                                    <String fx:value="card-elevated" />
-                                    <String fx:value="card-teal" />
-                                </styleClass>
-                                <HBox spacing="16" alignment="CENTER_LEFT">
-                                    <StackPane>
-                                        <styleClass>
-                                            <String fx:value="icon-box" />
-                                            <String fx:value="icon-box-teal" />
-                                        </styleClass>
-                                        <Label text="🎯" style="-fx-font-size: 20px;" />
-                                    </StackPane>
-                                    <VBox spacing="4">
-                                        <Label text="Find Your Genre" styleClass="heading-lg" />
-                                        <Label text="Take a quiz to discover your music style" styleClass="body-sm" />
-                                    </VBox>
-                                </HBox>
-                                <Region VBox.vgrow="ALWAYS" />
-                                <Button text="Start Quiz  →"
-                                        onAction="#openFindYourGenrePage"
-                                        maxWidth="Infinity" prefHeight="44"
-                                        styleClass="btn-teal-soft" />
-                            </VBox>
-
-                        </children>
-                    </GridPane>
+                            <ListView fx:id="freshTracksListView" prefHeight="300" minHeight="200" VBox.vgrow="ALWAYS"/>
+                        </VBox>
+                    </HBox>
                 </VBox>
             </content>
         </ScrollPane>
     </center>
 
     <bottom>
-        <fx:include source="mini-player.fxml" />
+        <fx:include source="mini-player.fxml"/>
     </bottom>
 </BorderPane>
