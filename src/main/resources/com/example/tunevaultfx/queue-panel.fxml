@@ -25,9 +25,7 @@
 
         <!-- Header -->
         <HBox alignment="CENTER_LEFT" spacing="12"
-              style="-fx-padding: 22 24 16 24;
-                     -fx-border-color: transparent transparent rgba(255,255,255,0.06) transparent;
-                     -fx-border-width: 0 0 1 0;">
+              styleClass="queue-panel-header">
             <VBox spacing="2" HBox.hgrow="ALWAYS">
                 <Label text="UP NEXT" styleClass="overline, text-accent" />
                 <Label fx:id="queueCountLabel" text="Queue"

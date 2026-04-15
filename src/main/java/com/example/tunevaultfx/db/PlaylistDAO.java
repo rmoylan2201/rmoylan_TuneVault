@@ -1,5 +1,7 @@
 package com.example.tunevaultfx.db;
 
+import com.example.tunevaultfx.core.PlaylistNames;
+
 import java.sql.*;
 
 /**
@@ -57,26 +59,29 @@ public class PlaylistDAO {
      * Ensures Liked Songs exists for the user. Safe to call multiple times.
      */
     public void ensureLikedSongsPlaylistExists(int userId) throws SQLException {
-        String insertSql = """
+        String insertSql =
+                """
                 INSERT INTO playlist (user_id, name, is_system_playlist)
-                SELECT ?, 'Liked Songs', TRUE
+                SELECT ?, ?, TRUE
                 WHERE NOT EXISTS (
-                    SELECT 1 FROM playlist WHERE user_id = ? AND name = 'Liked Songs'
+                    SELECT 1 FROM playlist WHERE user_id = ? AND name = ?
                 )
                 """;
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement stmt = conn.prepareStatement(insertSql)) {
             stmt.setInt(1, userId);
-            stmt.setInt(2, userId);
+            stmt.setString(2, PlaylistNames.LIKED_SONGS);
+            stmt.setInt(3, userId);
+            stmt.setString(4, PlaylistNames.LIKED_SONGS);
             stmt.executeUpdate();
         }
 
         String updateSql =
-                "UPDATE playlist SET is_system_playlist = TRUE " +
-                        "WHERE user_id = ? AND name = 'Liked Songs'";
+                "UPDATE playlist SET is_system_playlist = TRUE WHERE user_id = ? AND name = ?";
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement stmt = conn.prepareStatement(updateSql)) {
             stmt.setInt(1, userId);
+            stmt.setString(2, PlaylistNames.LIKED_SONGS);
             stmt.executeUpdate();
         }
     }
@@ -103,6 +108,9 @@ public class PlaylistDAO {
      * Deletes a playlist and all its songs. Refuses to delete system playlists.
      */
     public boolean deletePlaylist(String username, String playlistName) throws SQLException {
+        if (PlaylistNames.isLikedSongs(playlistName)) {
+            return false;
+        }
         Integer userId = findUserIdByUsername(username);
         if (userId == null) return false;
 

@@ -9,67 +9,62 @@
             prefWidth="1280.0" prefHeight="820.0"
             styleClass="page-bg">
 
-    <!-- ── TOP ───────────────────────────────────── -->
     <top>
-        <HBox alignment="CENTER_LEFT" spacing="12" styleClass="page-header">
-            <Button text="← Back"
-                    onAction="#handleBackToMenu"
-                    styleClass="btn-nav"/>
-
-            <StackPane HBox.hgrow="ALWAYS" alignment="CENTER">
-                <HBox alignment="CENTER" spacing="10">
-                    <Label text="🎵" style="-fx-font-size: 20px;"/>
-                    <Label text="Playlists" styleClass="heading-xl"/>
-                </HBox>
-            </StackPane>
-
-            <Region prefWidth="110"/>
-        </HBox>
+        <fx:include source="app-top-bar.fxml"/>
     </top>
 
+    <!-- ── LEFT: app rail ─────────────────────────── -->
+    <left>
+        <fx:include source="app-sidebar.fxml"/>
+    </left>
     <!-- ── CENTER: Scrollable two-column layout ──── -->
     <center>
-        <StackPane style="-fx-padding: 16 32 16 32;">
+        <StackPane alignment="TOP_LEFT"
+                   style="-fx-padding: 16 32 16 32;"
+                   maxWidth="Infinity" maxHeight="Infinity">
 
-            <!-- Main scrollable content -->
-            <ScrollPane fitToWidth="true" fitToHeight="true"
-                        hbarPolicy="NEVER"
-                        vbarPolicy="AS_NEEDED">
-                <content>
-                    <HBox fx:id="contentRow" spacing="20" alignment="TOP_LEFT"
-                          fillHeight="true" style="-fx-padding: 0 0 24 0;">
+            <!-- Sidebar stays in the viewport; only the playlist detail column scrolls -->
+            <HBox fx:id="contentRow" spacing="20" alignment="TOP_LEFT"
+                  fillHeight="true" maxWidth="Infinity" maxHeight="Infinity"
+                  style="-fx-padding: 0 0 24 0;">
 
-                        <!-- ── LEFT: Playlist list ──────────── -->
-                        <VBox fx:id="playlistSidebarCard" spacing="12"
-                              minWidth="280" prefWidth="280" maxWidth="280"
-                              styleClass="card">
+                <VBox fx:id="playlistSidebarCard" spacing="12"
+                      minWidth="280" prefWidth="280" maxWidth="280"
+                      minHeight="0" maxHeight="Infinity"
+                      HBox.hgrow="NEVER"
+                      styleClass="card">
 
-                            <HBox alignment="CENTER_LEFT" spacing="8">
-                                <Label text="Your Playlists" styleClass="heading-md"/>
-                            </HBox>
+                    <HBox alignment="CENTER_LEFT" spacing="8">
+                        <Label text="Your Playlists" styleClass="heading-md"/>
+                    </HBox>
 
-                            <ListView fx:id="playlistListView"
-                                      VBox.vgrow="ALWAYS"
-                                      minHeight="120"/>
+                    <ListView fx:id="playlistListView"
+                              VBox.vgrow="ALWAYS"
+                              minHeight="120"/>
 
-                            <VBox spacing="8" style="-fx-padding: 4 0 0 0;">
-                                <Button text="+ New Playlist"
-                                        onAction="#handleCreatePlaylist"
-                                        maxWidth="Infinity"
-                                        styleClass="btn-primary"/>
+                    <VBox spacing="8" style="-fx-padding: 4 0 0 0;">
+                        <Button text="+ New Playlist"
+                                onAction="#handleCreatePlaylist"
+                                maxWidth="Infinity"
+                                styleClass="btn-primary"/>
 
-                                <Button text="Delete Playlist"
-                                        onAction="#handleDeletePlaylist"
-                                        maxWidth="Infinity"
-                                        styleClass="btn-danger"/>
-                            </VBox>
-                        </VBox>
+                        <Button fx:id="deletePlaylistButton"
+                                text="Delete Playlist"
+                                onAction="#handleDeletePlaylist"
+                                maxWidth="Infinity"
+                                styleClass="btn-danger"/>
+                    </VBox>
+                </VBox>
 
-                        <!-- ── RIGHT: Content ──────────────── -->
-                        <VBox spacing="18" HBox.hgrow="ALWAYS">
+                <ScrollPane fitToWidth="true" fitToHeight="false"
+                            hbarPolicy="NEVER"
+                            vbarPolicy="AS_NEEDED"
+                            HBox.hgrow="ALWAYS"
+                            minWidth="0" minHeight="0" maxHeight="Infinity">
+                    <content>
+                        <VBox spacing="0" minHeight="0">
 
-                            <!-- Playlist songs card -->
-                            <VBox fx:id="playlistSongsCard" spacing="14" styleClass="card">
+                            <VBox fx:id="playlistSongsCard" spacing="12" styleClass="card">
 
                                 <HBox alignment="CENTER_LEFT" spacing="14">
                                     <VBox spacing="4" HBox.hgrow="ALWAYS">
@@ -92,38 +87,34 @@
 
                                 <Separator/>
 
-                                <ListView fx:id="playlistSongsListView" prefHeight="260"/>
-                            </VBox>
+                                <ListView fx:id="playlistSongsListView" minHeight="160"/>
 
-                            <!-- Suggestions card (hidden until populated) -->
-                            <VBox fx:id="suggestionsSection"
-                                  spacing="14"
-                                  visible="false"
-                                  managed="false"
-                                  styleClass="card-glow">
+                                <VBox fx:id="suggestionsSection"
+                                      spacing="12"
+                                      visible="false"
+                                      managed="false"
+                                      styleClass="playlist-suggestions-block">
 
-                                <HBox alignment="CENTER_LEFT" spacing="12">
-                                    <VBox spacing="4" HBox.hgrow="ALWAYS">
-                                        <Label text="Suggested For You" styleClass="heading-md"/>
-                                        <Label fx:id="suggestionSubtitleLabel"
-                                               text="Based on this playlist and your listening history"
-                                               styleClass="caption"/>
-                                    </VBox>
-                                    <Label text="✦ Smart Picks" styleClass="badge, badge-accent"/>
-                                </HBox>
+                                    <Separator/>
 
-                                <Separator/>
+                                    <HBox alignment="CENTER_LEFT" spacing="12">
+                                        <VBox spacing="4" HBox.hgrow="ALWAYS">
+                                            <Label text="Suggested for you" styleClass="heading-md"/>
+                                            <Label fx:id="suggestionSubtitleLabel"
+                                                   text="Based on this playlist and your listening history"
+                                                   styleClass="caption"/>
+                                        </VBox>
+                                        <Label text="✦ Smart picks" styleClass="badge, badge-accent"/>
+                                    </HBox>
 
-                                <ListView fx:id="suggestedSongsListView"
-                                          prefHeight="268"
-                                          maxHeight="268"
-                                          fixedCellSize="66"/>
+                                    <ListView fx:id="suggestedSongsListView" minHeight="80"/>
+                                </VBox>
                             </VBox>
 
                         </VBox>
-                    </HBox>
-                </content>
-            </ScrollPane>
+                    </content>
+                </ScrollPane>
+            </HBox>
 
             <!-- Floating search panel (top-right overlay) -->
             <VBox fx:id="searchSongsPanel"
@@ -149,7 +140,7 @@
                                promptText="Title, artist, album or genre…"
                                prefHeight="42"/>
 
-                    <Label text="Double-click a result to open song details."
+                    <Label text="Double-click a row to play. Use + or the checkmark to add or remove from the playlist."
                            wrapText="true"
                            styleClass="caption"/>
 

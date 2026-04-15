@@ -9,6 +9,10 @@ import java.sql.SQLException;
 /**
  * Provides pooled database connections via HikariCP.
  *
+ * <p>Before running the app, create the {@code tune_vault_db} database and tables
+ * by applying {@code /db/schema.sql} from the classpath (source:
+ * {@code src/main/resources/db/schema.sql}) with the MySQL client.</p>
+ *
  * Benefits over the old DriverManager approach:
  *  - Connections are kept open and reused — no TCP handshake on every query.
  *  - Pool size of 10 means up to 10 concurrent queries without waiting.

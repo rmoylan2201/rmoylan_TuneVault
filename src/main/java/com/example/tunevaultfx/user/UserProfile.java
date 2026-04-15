@@ -1,11 +1,12 @@
 package com.example.tunevaultfx.user;
 
+import com.example.tunevaultfx.core.PlaylistNames;
 import com.example.tunevaultfx.core.Song;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
+import javafx.collections.ObservableMap;
 
 import java.util.LinkedHashMap;
-import java.util.Map;
 
 /**
  * Represents one user's in-memory music data: playlists and liked songs.
@@ -18,20 +19,23 @@ import java.util.Map;
 public class UserProfile {
 
     private final String username;
-    private final Map<String, ObservableList<Song>> playlists = new LinkedHashMap<>();
+    private final ObservableMap<String, ObservableList<Song>> playlists =
+            FXCollections.observableMap(new LinkedHashMap<>());
 
     public UserProfile(String username) {
         this.username = username;
-        playlists.put("Liked Songs", FXCollections.observableArrayList());
+        playlists.put(PlaylistNames.LIKED_SONGS, FXCollections.observableArrayList());
     }
 
     public String getUsername() { return username; }
 
-    public Map<String, ObservableList<Song>> getPlaylists() { return playlists; }
+    public ObservableMap<String, ObservableList<Song>> getPlaylists() {
+        return playlists;
+    }
 
     public ObservableList<Song> getLikedSongs() {
         return playlists.computeIfAbsent(
-                "Liked Songs", k -> FXCollections.observableArrayList());
+                PlaylistNames.LIKED_SONGS, k -> FXCollections.observableArrayList());
     }
 
     /**

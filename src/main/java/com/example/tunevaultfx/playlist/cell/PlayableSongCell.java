@@ -1,17 +1,22 @@
 package com.example.tunevaultfx.playlist.cell;
 
+import com.example.tunevaultfx.core.PlaylistNames;
 import com.example.tunevaultfx.core.Song;
 import com.example.tunevaultfx.musicplayer.controller.MusicPlayerController;
+import com.example.tunevaultfx.util.AppTheme;
 import com.example.tunevaultfx.util.CellStyleKit;
+import com.example.tunevaultfx.util.SongContextMenuBuilder;
 import javafx.geometry.Bounds;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.control.Button;
+import javafx.scene.control.ContextMenu;
 import javafx.scene.control.Label;
+import javafx.scene.Node;
 import javafx.scene.control.ListCell;
+import javafx.scene.input.ContextMenuEvent;
 import javafx.scene.input.MouseButton;
 import javafx.scene.layout.*;
-import javafx.stage.Popup;
 
 import java.util.function.Consumer;
 import java.util.function.Supplier;
@@ -41,7 +46,7 @@ public class PlayableSongCell extends ListCell<Song> {
     private final Consumer<String>  onOpenArtist;
 
     private final MusicPlayerController player = MusicPlayerController.getInstance();
-    private Popup activePopup;
+    private ContextMenu activeMenu;
 
     // ── Styles ────────────────────────────────────────────────────
 
@@ -57,19 +62,69 @@ public class PlayableSongCell extends ListCell<Song> {
                     "-fx-font-size: 14px; -fx-font-weight: bold;" +
                     "-fx-background-radius: 17;";
 
-    private static final String PLAY_PLAYING =
+    private static final String PLAY_PLAYING_DARK =
             "-fx-background-color: rgba(139,92,246,0.25);" +
                     "-fx-text-fill: #c4b5fd;" +
                     "-fx-font-size: 12px; -fx-font-weight: bold;" +
                     "-fx-background-radius: 17;";
 
-    private static final String MORE_DEFAULT =
+    private static String playDefaultStyle() {
+        if (AppTheme.isLightMode()) {
+            return "-fx-background-color: transparent;"
+                    + "-fx-text-fill: #64748b;"
+                    + "-fx-font-size: 14px; -fx-font-weight: bold;"
+                    + "-fx-background-radius: 17;";
+        }
+        return PLAY_DEFAULT;
+    }
+
+    private static String playHoverStyle() {
+        if (AppTheme.isLightMode()) {
+            return "-fx-background-color: rgba(124,58,237,0.14);"
+                    + "-fx-text-fill: #5b21b6;"
+                    + "-fx-font-size: 14px; -fx-font-weight: bold;"
+                    + "-fx-background-radius: 17;";
+        }
+        return PLAY_HOVER;
+    }
+
+    private static String playPlayingStyle() {
+        if (AppTheme.isLightMode()) {
+            return "-fx-background-color: #7c3aed;"
+                    + "-fx-text-fill: white;"
+                    + "-fx-font-size: 12px; -fx-font-weight: bold;"
+                    + "-fx-background-radius: 17;";
+        }
+        return PLAY_PLAYING_DARK;
+    }
+
+    private static String moreDefaultStyle() {
+        if (AppTheme.isLightMode()) {
+            return "-fx-background-color: transparent;"
+                    + "-fx-text-fill: #64748b;"
+                    + "-fx-font-size: 18px; -fx-font-weight: bold;"
+                    + "-fx-background-radius: 18; -fx-padding: 0;";
+        }
+        return MORE_DEFAULT_DARK;
+    }
+
+    private static String moreHoverStyle() {
+        if (AppTheme.isLightMode()) {
+            return "-fx-background-color: rgba(124,58,237,0.10);"
+                    + "-fx-text-fill: #5b21b6;"
+                    + "-fx-font-size: 18px; -fx-font-weight: bold;"
+                    + "-fx-background-radius: 18; -fx-padding: 0;";
+        }
+        return MORE_HOVER_DARK;
+    }
+
+    private static final String MORE_DEFAULT_DARK =
             "-fx-background-color: transparent;" +
                     "-fx-text-fill: #58586e;" +
                     "-fx-font-size: 18px; -fx-font-weight: bold;" +
                     "-fx-background-radius: 18; -fx-padding: 0;";
 
-    private static final String MORE_HOVER =
+    private static final String MORE_HOVER_DARK =
             "-fx-background-color: rgba(255,255,255,0.09);" +
                     "-fx-text-fill: #a0a0c0;" +
                     "-fx-font-size: 18px; -fx-font-weight: bold;" +
@@ -98,14 +153,14 @@ public class PlayableSongCell extends ListCell<Song> {
         nowPlayingBar.setVisible(false);
 
         // Play button
-        playButton.setStyle(PLAY_DEFAULT);
+        playButton.setStyle(playDefaultStyle());
         playButton.setPrefSize(34, 34);
         playButton.setMinSize(34, 34);
         playButton.setMaxSize(34, 34);
         playButton.setFocusTraversable(false);
 
         // More button
-        moreButton.setStyle(MORE_DEFAULT);
+        moreButton.setStyle(moreDefaultStyle());
         moreButton.setPrefSize(36, 36);
         moreButton.setMinSize(36, 36);
         moreButton.setMaxSize(36, 36);
@@ -114,7 +169,7 @@ public class PlayableSongCell extends ListCell<Song> {
         // Labels
         titleLabel.setStyle(
                 "-fx-font-size: 14px; -fx-font-weight: bold; -fx-text-fill: "
-                        + CellStyleKit.TEXT_PRIMARY + ";");
+                        + CellStyleKit.getTextPrimary() + ";");
 
         textBox.getChildren().add(titleLabel);
         textBox.setMaxWidth(Double.MAX_VALUE);
@@ -123,25 +178,25 @@ public class PlayableSongCell extends ListCell<Song> {
 
         row.setAlignment(Pos.CENTER_LEFT);
         row.setPadding(new Insets(9, 12, 9, 12));
-        row.setStyle(CellStyleKit.ROW_DEFAULT);
+        row.setStyle(CellStyleKit.getRowDefault());
         row.getChildren().addAll(nowPlayingBar, playButton, textBox, spacer, moreButton);
 
         // Row hover
         row.setOnMouseEntered(e -> {
             Song s = getItem();
             boolean isPlaying = isCurrentTrackInThisPlaylist(s);
-            if (!isPlaying) {
-                row.setStyle(CellStyleKit.ROW_HOVER);
-                playButton.setStyle(PLAY_HOVER);
+                       if (!isPlaying) {
+                row.setStyle(CellStyleKit.getRowHover());
+                playButton.setStyle(playHoverStyle());
             }
-            moreButton.setStyle(MORE_HOVER);
+            moreButton.setStyle(moreHoverStyle());
         });
         row.setOnMouseExited(e -> {
             Song s = getItem();
             boolean isPlaying = isCurrentTrackInThisPlaylist(s);
-            row.setStyle(isPlaying ? CellStyleKit.ROW_PLAYING : CellStyleKit.ROW_DEFAULT);
-            playButton.setStyle(isPlaying ? PLAY_PLAYING : PLAY_DEFAULT);
-            moreButton.setStyle(MORE_DEFAULT);
+            row.setStyle(isPlaying ? CellStyleKit.getRowPlaying() : CellStyleKit.getRowDefault());
+            playButton.setStyle(isPlaying ? playPlayingStyle() : playDefaultStyle());
+            moreButton.setStyle(moreDefaultStyle());
         });
 
         // Actions
@@ -150,11 +205,17 @@ public class PlayableSongCell extends ListCell<Song> {
             if (s != null && onPlay != null) onPlay.accept(s);
             ev.consume();
         });
-        moreButton.setOnAction(ev -> {
-            Song s = getItem();
-            if (s != null) showActionPopup(s);
-            ev.consume();
-        });
+        moreButton.setOnAction(
+                ev -> {
+                    Song s = getItem();
+                    if (s != null) {
+                        Bounds b = moreButton.localToScreen(moreButton.getBoundsInLocal());
+                        if (b != null) {
+                            showSongMenu(s, moreButton, b.getMinX(), b.getMaxY() + 6);
+                        }
+                    }
+                    ev.consume();
+                });
 
         row.setOnMouseClicked(ev -> {
             if (ev.getButton() != MouseButton.PRIMARY || ev.getClickCount() != 2) return;
@@ -164,6 +225,17 @@ public class PlayableSongCell extends ListCell<Song> {
                 ev.consume();
             }
         });
+
+        row.addEventFilter(
+                ContextMenuEvent.CONTEXT_MENU_REQUESTED,
+                ev -> {
+                    Song s = getItem();
+                    if (s == null || isEmpty()) {
+                        return;
+                    }
+                    showSongMenu(s, row, ev.getScreenX(), ev.getScreenY());
+                    ev.consume();
+                });
 
         setOnMousePressed(ev -> {
             if (!isEmpty() && getListView() != null)
@@ -176,7 +248,7 @@ public class PlayableSongCell extends ListCell<Song> {
     @Override
     protected void updateItem(Song song, boolean empty) {
         super.updateItem(song, empty);
-        hidePopup();
+        hideActionMenu();
 
         if (empty || song == null) {
             setText(null); setGraphic(null);
@@ -189,11 +261,11 @@ public class PlayableSongCell extends ListCell<Song> {
 
         titleLabel.setText(song.title());
         titleLabel.setStyle("-fx-font-size: 14px; -fx-font-weight: bold; -fx-text-fill: "
-                + (isPlaying ? "#c4b5fd" : CellStyleKit.TEXT_PRIMARY) + ";");
+                + (isPlaying ? CellStyleKit.getAccentTitle() : CellStyleKit.getTextPrimary()) + ";");
         while (textBox.getChildren().size() > 1) {
             textBox.getChildren().remove(1);
         }
-        HBox meta = CellStyleKit.songMetaLine(song.artist(), song.genre(), onOpenArtist);
+        HBox meta = CellStyleKit.songMetaLine(song.artist(), null, onOpenArtist);
         if (!meta.getChildren().isEmpty()) {
             textBox.getChildren().add(meta);
         }
@@ -201,8 +273,8 @@ public class PlayableSongCell extends ListCell<Song> {
         nowPlayingBar.setVisible(isPlaying);
         nowPlayingBar.setManaged(isPlaying);
         playButton.setText(isPlaying ? "⏸" : "▶");
-        playButton.setStyle(isPlaying ? PLAY_PLAYING : PLAY_DEFAULT);
-        row.setStyle(isPlaying ? CellStyleKit.ROW_PLAYING : CellStyleKit.ROW_DEFAULT);
+        playButton.setStyle(isPlaying ? playPlayingStyle() : playDefaultStyle());
+        row.setStyle(isPlaying ? CellStyleKit.getRowPlaying() : CellStyleKit.getRowDefault());
         CellStyleKit.markPlaying(row, isPlaying);
 
         setText(null); setGraphic(row);
@@ -213,73 +285,50 @@ public class PlayableSongCell extends ListCell<Song> {
     @Override
     public void updateSelected(boolean selected) { super.updateSelected(false); }
 
-    // ── Dark popup menu ───────────────────────────────────────────
+    private void showSongMenu(Song song, Node anchor, double screenX, double screenY) {
+        hideActionMenu();
 
-    private void showActionPopup(Song song) {
-        hidePopup();
-        Popup popup = new Popup();
-        popup.setAutoHide(true);
-        popup.setAutoFix(true);
-        popup.setHideOnEscape(true);
-
-        VBox card = new VBox(6);
-        card.setPadding(new Insets(8));
-        card.setPrefWidth(232);
-        card.setStyle(
-                "-fx-background-color: #16162a;" +
-                        "-fx-background-radius: 18;" +
-                        "-fx-border-color: rgba(255,255,255,0.12);" +
-                        "-fx-border-radius: 18; -fx-border-width: 1;" +
-                        "-fx-effect: dropshadow(gaussian,rgba(0,0,0,0.65),28,0,0,10);");
-
-        Button playNextBtn = menuButton("Play Next", false);
-        playNextBtn.setOnAction(ev -> {
-            hidePopup(); player.addToQueueNext(song); ev.consume();
-        });
-
-        Button addBtn = menuButton("Add to Another Playlist", false);
-        addBtn.setOnAction(ev -> {
-            hidePopup(); if (onAddToPlaylist != null) onAddToPlaylist.accept(song); ev.consume();
-        });
-
-        String name = playlistNameSupplier != null ? playlistNameSupplier.get() : "this playlist";
-        Button removeBtn = menuButton("Remove from " + name, true);
-        removeBtn.setOnAction(ev -> {
-            hidePopup(); if (onRemoveFromPlaylist != null) onRemoveFromPlaylist.accept(song); ev.consume();
-        });
-
-        card.getChildren().addAll(playNextBtn, addBtn, removeBtn);
-        popup.getContent().add(card);
-
-        Bounds b = moreButton.localToScreen(moreButton.getBoundsInLocal());
-        if (b != null) { popup.show(moreButton, b.getMaxX() - 222, b.getMaxY() + 6); activePopup = popup; }
+        String playlistName =
+                playlistNameSupplier != null ? playlistNameSupplier.get() : "this playlist";
+        SongContextMenuBuilder.Spec spec;
+        if (PlaylistNames.isLikedSongs(playlistName)) {
+            spec =
+                    new SongContextMenuBuilder.Spec()
+                            .playNext(true)
+                            .addToPlaylist(true, "Add to Another Playlist")
+                            .likeToggle(true);
+        } else {
+            spec =
+                    SongContextMenuBuilder.Spec.forPlaylistRow(
+                            playlistName,
+                            () -> {
+                                if (onRemoveFromPlaylist != null) {
+                                    onRemoveFromPlaylist.accept(song);
+                                }
+                            });
+        }
+        ContextMenu menu = SongContextMenuBuilder.build(song, anchor, spec);
+        if (onAddToPlaylist != null) {
+            for (var item : menu.getItems()) {
+                if ("Add to Another Playlist".equals(item.getText())) {
+                    item.setOnAction(
+                            ev -> {
+                                hideActionMenu();
+                                onAddToPlaylist.accept(song);
+                            });
+                    break;
+                }
+            }
+        }
+        activeMenu = menu;
+        menu.show(anchor, screenX, screenY);
     }
 
-    private static Button menuButton(String text, boolean destructive) {
-        Button btn = new Button(text);
-        btn.setAlignment(Pos.CENTER_LEFT);
-        btn.setMaxWidth(Double.MAX_VALUE);
-        btn.setPrefHeight(42);
-        btn.setFocusTraversable(false);
-
-        String textColor = destructive ? "#fda4af" : "#e0e0f0";
-        String hoverBg   = destructive ? "rgba(244,63,94,0.12)" : "rgba(255,255,255,0.07)";
-
-        String base  = "-fx-background-color: transparent; -fx-background-radius: 11;"
-                + "-fx-font-size: 13px; -fx-padding: 0 14 0 14;"
-                + "-fx-text-fill: " + textColor + ";";
-        String hover = "-fx-background-color: " + hoverBg + "; -fx-background-radius: 11;"
-                + "-fx-font-size: 13px; -fx-padding: 0 14 0 14;"
-                + "-fx-text-fill: " + textColor + ";";
-
-        btn.setStyle(base);
-        btn.setOnMouseEntered(e -> btn.setStyle(hover));
-        btn.setOnMouseExited(e  -> btn.setStyle(base));
-        return btn;
-    }
-
-    private void hidePopup() {
-        if (activePopup != null) { activePopup.hide(); activePopup = null; }
+    private void hideActionMenu() {
+        if (activeMenu != null) {
+            activeMenu.hide();
+            activeMenu = null;
+        }
     }
 
     private boolean isCurrentTrackInThisPlaylist(Song song) {

@@ -15,6 +15,7 @@ module com.example.tunevaultfx {
     // HikariCP uses SLF4J for logging — declare it so the module system
     // doesn't block the reflection HikariCP needs internally
     requires org.slf4j;
+    requires java.prefs;
 
     exports com.example.tunevaultfx.app;
     opens com.example.tunevaultfx.app to com.fasterxml.jackson.databind, javafx.fxml;
@@ -69,4 +70,7 @@ module com.example.tunevaultfx {
 
     exports com.example.tunevaultfx.recommendation;
     opens com.example.tunevaultfx.recommendation to com.fasterxml.jackson.databind, javafx.fxml;
+
+    exports com.example.tunevaultfx.chrome;
+    opens com.example.tunevaultfx.chrome to com.fasterxml.jackson.databind, javafx.fxml;
 }

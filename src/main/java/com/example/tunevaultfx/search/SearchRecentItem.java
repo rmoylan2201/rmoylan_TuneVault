@@ -48,9 +48,9 @@ public class SearchRecentItem {
 
     public String getSecondaryText() {
         if (type == Type.SONG && song != null) {
-            return "Song • " + song.artist();
+            return song.artist() == null ? "" : song.artist();
         }
-        return "Artist";
+        return "";
     }
 
     public boolean sameAs(SearchRecentItem other) {

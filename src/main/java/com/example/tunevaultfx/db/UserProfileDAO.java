@@ -1,5 +1,6 @@
 package com.example.tunevaultfx.db;
 
+import com.example.tunevaultfx.core.PlaylistNames;
 import com.example.tunevaultfx.core.Song;
 import com.example.tunevaultfx.user.UserProfile;
 import javafx.collections.FXCollections;
@@ -73,7 +74,7 @@ public class UserProfileDAO {
         }
 
         // Always guarantee Liked Songs is present
-        loaded.putIfAbsent("Liked Songs", FXCollections.observableArrayList());
+        loaded.putIfAbsent(PlaylistNames.LIKED_SONGS, FXCollections.observableArrayList());
 
         UserProfile profile = new UserProfile(username);
         profile.getPlaylists().clear();

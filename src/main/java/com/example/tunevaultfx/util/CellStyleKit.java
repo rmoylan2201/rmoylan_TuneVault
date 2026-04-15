@@ -32,13 +32,46 @@ public final class CellStyleKit {
 
     private CellStyleKit() {}
 
-    // ── Text colours ───────────────────────────────────────────────
+    // ── Text colours (dark baseline; use getters for theme-aware UI) ─
 
     public static final String TEXT_PRIMARY   = "#eeeef6";
     public static final String TEXT_SECONDARY = "#9d9db8";
     public static final String TEXT_MUTED     = "#5c5c78";
 
-    // ── Row backgrounds ───────────────────────────────────────────
+    public static String getTextPrimary() {
+        return AppTheme.isLightMode() ? "#0f172a" : TEXT_PRIMARY;
+    }
+
+    public static String getTextSecondary() {
+        return AppTheme.isLightMode() ? "#475569" : TEXT_SECONDARY;
+    }
+
+    public static String getTextMuted() {
+        return AppTheme.isLightMode() ? "#64748b" : TEXT_MUTED;
+    }
+
+    public static String getAccentTitle() {
+        return AppTheme.isLightMode() ? "#5b21b6" : "#c4b5fd";
+    }
+
+    /** Row chrome: readable hover/playing on light backgrounds */
+    public static String getRowDefault() {
+        return "-fx-background-color: transparent; -fx-background-radius: 14;";
+    }
+
+    public static String getRowHover() {
+        return AppTheme.isLightMode()
+                ? "-fx-background-color: rgba(124,58,237,0.10); -fx-background-radius: 14;"
+                : "-fx-background-color: rgba(139,92,246,0.06); -fx-background-radius: 14;";
+    }
+
+    public static String getRowPlaying() {
+        return AppTheme.isLightMode()
+                ? "-fx-background-color: rgba(124,58,237,0.16); -fx-background-radius: 14;"
+                : "-fx-background-color: rgba(139,92,246,0.12); -fx-background-radius: 14;";
+    }
+
+    // ── Row backgrounds (dark defaults; prefer getRow* in new code) ─
 
     public static final String ROW_DEFAULT  =
             "-fx-background-color: transparent; -fx-background-radius: 14;";
@@ -86,7 +119,7 @@ public final class CellStyleKit {
                         "-fx-border-width: 1;");
 
         Label lbl = new Label(symbol);
-        lbl.setStyle("-fx-font-size: 16px; -fx-text-fill: " + p.text + ";");
+        lbl.setStyle("-fx-font-size: 16px; -fx-text-fill: " + paletteIconText(p) + ";");
         box.getChildren().add(lbl);
         StackPane.setAlignment(lbl, Pos.CENTER);
         return box;
@@ -100,7 +133,7 @@ public final class CellStyleKit {
         lbl.setMinWidth(28);
         lbl.setStyle(
                 "-fx-font-size: 13px; -fx-font-weight: bold;" +
-                        "-fx-text-fill: " + TEXT_MUTED + ";");
+                        "-fx-text-fill: " + getTextMuted() + ";");
         return lbl;
     }
 
@@ -111,7 +144,7 @@ public final class CellStyleKit {
         Label lbl = new Label(text);
         lbl.setStyle(
                 "-fx-font-size: 14px; -fx-font-weight: bold;" +
-                        "-fx-text-fill: " + TEXT_PRIMARY + ";");
+                        "-fx-text-fill: " + getTextPrimary() + ";");
         return lbl;
     }
 
@@ -122,7 +155,7 @@ public final class CellStyleKit {
         Label lbl = new Label(text);
         lbl.setStyle(
                 "-fx-font-size: 12px;" +
-                        "-fx-text-fill: " + TEXT_SECONDARY + ";");
+                        "-fx-text-fill: " + getTextSecondary() + ";");
         return lbl;
     }
 
@@ -133,7 +166,7 @@ public final class CellStyleKit {
         Label lbl = new Label(text);
         lbl.setStyle(
                 "-fx-font-size: 12px;" +
-                        "-fx-text-fill: " + TEXT_MUTED + ";");
+                        "-fx-text-fill: " + getTextMuted() + ";");
         return lbl;
     }
 
@@ -152,14 +185,7 @@ public final class CellStyleKit {
      */
     public static Label tag(String text, Palette p) {
         Label lbl = new Label(text);
-        lbl.setStyle(
-                "-fx-background-color: " + p.bg + ";" +
-                        "-fx-text-fill: " + p.text + ";" +
-                        "-fx-font-size: 11px; -fx-font-weight: bold;" +
-                        "-fx-background-radius: 10;" +
-                        "-fx-border-color: " + p.border + ";" +
-                        "-fx-border-radius: 10; -fx-border-width: 1;" +
-                        "-fx-padding: 3 10 3 10;");
+        lbl.setStyle(tagStyle(p));
         return lbl;
     }
 
@@ -167,7 +193,10 @@ public final class CellStyleKit {
      * Builds a standard song info VBox (title on top, meta below).
      */
     public static VBox textBox(String title, String meta) {
-        VBox box = new VBox(3, primary(title), secondary(meta));
+        VBox box = new VBox(3, primary(title));
+        if (meta != null && !meta.isBlank()) {
+            box.getChildren().add(secondary(meta));
+        }
         HBox.setHgrow(box, Priority.ALWAYS);
         return box;
     }
@@ -207,7 +236,7 @@ public final class CellStyleKit {
                 link.setPadding(Insets.EMPTY);
                 link.setUnderline(false);
                 link.setStyle(
-                        "-fx-font-size: 12px; -fx-text-fill: " + TEXT_SECONDARY + ";"
+                        "-fx-font-size: 12px; -fx-text-fill: " + getTextSecondary() + ";"
                                 + "-fx-border-width: 0; -fx-underline: false;"
                                 + "-fx-background-color: transparent;");
                 link.setOnAction(e -> {
@@ -223,7 +252,7 @@ public final class CellStyleKit {
         if (hasGenre) {
             if (!row.getChildren().isEmpty()) {
                 Label dot = new Label(" \u00B7 ");
-                dot.setStyle("-fx-font-size: 12px; -fx-text-fill: " + TEXT_SECONDARY + ";");
+                dot.setStyle("-fx-font-size: 12px; -fx-text-fill: " + getTextSecondary() + ";");
                 row.getChildren().add(dot);
             }
             row.getChildren().add(secondary(genre.trim()));
@@ -239,7 +268,7 @@ public final class CellStyleKit {
         HBox row = new HBox(12);
         row.setAlignment(Pos.CENTER_LEFT);
         row.setPadding(new Insets(9, 14, 9, 14));
-        row.setStyle(ROW_DEFAULT);
+        row.setStyle(getRowDefault());
         row.getChildren().addAll(children);
         return row;
     }
@@ -249,8 +278,8 @@ public final class CellStyleKit {
      * Call this after building the row with row().
      */
     public static void addHover(HBox row) {
-        row.setOnMouseEntered(e -> row.setStyle(ROW_HOVER));
-        row.setOnMouseExited(e  -> row.setStyle(ROW_DEFAULT));
+        row.setOnMouseEntered(e -> row.setStyle(getRowHover()));
+        row.setOnMouseExited(e  -> row.setStyle(getRowDefault()));
     }
 
     /**
@@ -258,15 +287,59 @@ public final class CellStyleKit {
      */
     public static void markPlaying(HBox row, boolean playing) {
         if (playing) {
-            row.setStyle(ROW_PLAYING);
-            row.setOnMouseEntered(e -> row.setStyle(ROW_PLAYING));
-            row.setOnMouseExited(e  -> row.setStyle(ROW_PLAYING));
+            row.setStyle(getRowPlaying());
+            row.setOnMouseEntered(e -> row.setStyle(getRowPlaying()));
+            row.setOnMouseExited(e  -> row.setStyle(getRowPlaying()));
         } else {
             addHover(row);
         }
     }
 
     // ── Common meta builders ───────────────────────────────────────
+
+    private static String paletteIconText(Palette p) {
+        if (!AppTheme.isLightMode()) {
+            return p.text;
+        }
+        return switch (p) {
+            case PURPLE -> "#5b21b6";
+            case ROSE -> "#be123c";
+            case GREEN -> "#15803d";
+            case AMBER -> "#b45309";
+        };
+    }
+
+    private static String tagStyle(Palette p) {
+        if (!AppTheme.isLightMode()) {
+            return "-fx-background-color: " + p.bg + ";"
+                    + "-fx-text-fill: " + p.text + ";"
+                    + "-fx-font-size: 11px; -fx-font-weight: bold;"
+                    + "-fx-background-radius: 10;"
+                    + "-fx-border-color: " + p.border + ";"
+                    + "-fx-border-radius: 10; -fx-border-width: 1;"
+                    + "-fx-padding: 3 10 3 10;";
+        }
+        return switch (p) {
+            case PURPLE -> tagStyleLight(
+                    "rgba(124,58,237,0.14)", "rgba(124,58,237,0.35)", "#5b21b6");
+            case ROSE -> tagStyleLight(
+                    "rgba(244,63,94,0.12)", "rgba(225,29,72,0.35)", "#be123c");
+            case GREEN -> tagStyleLight(
+                    "rgba(34,197,94,0.14)", "rgba(22,163,74,0.35)", "#15803d");
+            case AMBER -> tagStyleLight(
+                    "rgba(245,158,11,0.16)", "rgba(217,119,6,0.4)", "#b45309");
+        };
+    }
+
+    private static String tagStyleLight(String bg, String border, String text) {
+        return "-fx-background-color: " + bg + ";"
+                + "-fx-text-fill: " + text + ";"
+                + "-fx-font-size: 11px; -fx-font-weight: bold;"
+                + "-fx-background-radius: 10;"
+                + "-fx-border-color: " + border + ";"
+                + "-fx-border-radius: 10; -fx-border-width: 1;"
+                + "-fx-padding: 3 10 3 10;";
+    }
 
     /**
      * Builds "Artist · Genre" meta string, gracefully handling nulls/blanks.

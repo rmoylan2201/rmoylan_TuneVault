@@ -1,12 +1,10 @@
 package com.example.tunevaultfx.wrapped;
 
 import com.example.tunevaultfx.session.SessionManager;
-import com.example.tunevaultfx.util.SceneUtil;
 import com.example.tunevaultfx.util.UiMotionUtil;
 import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
-import javafx.scene.Node;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.ProgressBar;
@@ -14,8 +12,6 @@ import javafx.scene.layout.GridPane;
 import javafx.scene.layout.VBox;
 
 import java.util.List;
-
-import java.io.IOException;
 
 /**
  * Controls the Wrapped page and displays the user's listening summary.
@@ -111,11 +107,6 @@ public class WrappedPageController {
         currentRange = StatsRange.OVERALL;
         loadStats(currentRange);
         updateRangeButtons();
-    }
-
-    @FXML
-    private void handleBackToMenu(ActionEvent event) throws IOException {
-        SceneUtil.goBack((Node) event.getSource());
     }
 
     private void loadStats(StatsRange range) {

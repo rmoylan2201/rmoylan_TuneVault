@@ -72,7 +72,7 @@
    PAGE LAYOUT
    ═══════════════════════════════════════════════════════════════════ */
 .page-bg {
-    -fx-background-color: linear-gradient(to bottom right, #07070e, #0d0d1a);
+    -fx-background-color: linear-gradient(to bottom right, #04040a 0%, #090818 45%, #060612 100%);
 }
 
 .page-header {
@@ -83,6 +83,264 @@
 
 .page-content {
     -fx-padding: 20 32 28 32;
+}
+
+/* Home dashboard */
+.home-hero {
+    -fx-padding: 4 0 12 0;
+}
+
+.home-libraries {
+    -fx-background-color: linear-gradient(to bottom right, rgba(22,22,38,0.95), rgba(15,15,28,0.98));
+    -fx-background-radius: 22;
+    -fx-border-color: rgba(139,92,246,0.22);
+    -fx-border-radius: 22;
+    -fx-border-width: 1;
+    -fx-padding: 20 22 20 22;
+    -fx-effect: dropshadow(gaussian, rgba(139,92,246,0.12), 24, 0, 0, 6);
+}
+
+.playlist-chip {
+    -fx-background-color: rgba(255,255,255,0.05);
+    -fx-text-fill: #eeeef6;
+    -fx-font-size: 12px;
+    -fx-font-weight: bold;
+    -fx-background-radius: 20;
+    -fx-border-color: rgba(139,92,246,0.28);
+    -fx-border-radius: 20;
+    -fx-border-width: 1;
+    -fx-padding: 8 16 8 16;
+}
+.playlist-chip:hover {
+    -fx-background-color: rgba(139,92,246,0.14);
+    -fx-border-color: rgba(139,92,246,0.45);
+    -fx-text-fill: #f5f3ff;
+}
+.playlist-chip-more {
+    -fx-background-color: rgba(139,92,246,0.08);
+    -fx-text-fill: #c4b5fd;
+    -fx-border-color: rgba(139,92,246,0.22);
+}
+.playlist-chip-more:hover {
+    -fx-background-color: rgba(139,92,246,0.16);
+    -fx-text-fill: #e9d5ff;
+}
+
+/* Home: Spotify-style playlist shortcuts */
+.home-playlist-grid {
+    -fx-padding: 2 0 0 0;
+}
+.home-playlist-tile {
+    -fx-cursor: hand;
+    -fx-background-color: rgba(255,255,255,0.04);
+    -fx-background-radius: 14;
+    -fx-border-color: rgba(139,92,246,0.20);
+    -fx-border-radius: 14;
+    -fx-border-width: 1;
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.35), 18, 0, 0, 4);
+}
+.home-playlist-tile:hover {
+    -fx-background-color: rgba(139,92,246,0.12);
+    -fx-border-color: rgba(167,139,250,0.45);
+}
+.home-playlist-tile-more {
+    -fx-background-color: rgba(139,92,246,0.08);
+    -fx-border-color: rgba(139,92,246,0.28);
+}
+.home-playlist-tile-more:hover {
+    -fx-background-color: rgba(139,92,246,0.16);
+}
+.home-playlist-tile-art {
+    -fx-background-color: linear-gradient(to bottom right, #5b21b6, #312e81);
+    -fx-background-radius: 12;
+    -fx-border-color: rgba(255,255,255,0.12);
+    -fx-border-radius: 12;
+    -fx-border-width: 1;
+}
+.home-playlist-tile-art-more {
+    -fx-background-color: linear-gradient(to bottom right, rgba(139,92,246,0.35), rgba(30,27,75,0.95));
+}
+.home-playlist-tile-glyph {
+    -fx-font-size: 18px;
+    -fx-text-fill: #f5f3ff;
+    -fx-font-weight: bold;
+}
+.home-playlist-tile-glyph-more {
+    -fx-font-size: 15px;
+}
+.home-playlist-tile-title {
+    -fx-font-size: 13px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #eeeef6;
+}
+
+/* Left app sidebar (Spotify-style rail) */
+.app-sidebar {
+    -fx-background-color: linear-gradient(to bottom, #0c0c18 0%, #080812 100%);
+    -fx-border-color: transparent rgba(255,255,255,0.06) transparent transparent;
+    -fx-border-width: 0 1 0 0;
+}
+.sidebar-brand {
+    -fx-cursor: hand;
+}
+.sidebar-logo-mark {
+    -fx-background-color: linear-gradient(to bottom right, #7c3aed, #4c1d95 55%, #312e81);
+    -fx-background-radius: 12;
+    -fx-border-color: rgba(255,255,255,0.12);
+    -fx-border-radius: 12;
+    -fx-border-width: 1;
+}
+.sidebar-logo-glyph {
+    -fx-font-size: 18px;
+    -fx-text-fill: #f5f3ff;
+}
+.sidebar-title {
+    -fx-font-size: 15px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #f4f4ff;
+}
+.sidebar-tagline {
+    -fx-font-size: 11px;
+    -fx-text-fill: #7c7c9a;
+}
+.sidebar-nav-block {
+    -fx-padding: 0;
+}
+.sidebar-nav-btn {
+    -fx-background-color: transparent;
+    -fx-text-fill: #b4b4cc;
+    -fx-font-size: 14px;
+    -fx-font-weight: bold;
+    -fx-background-radius: 8;
+    -fx-padding: 10 12 10 14;
+    -fx-alignment: center-left;
+    -fx-graphic-text-gap: 10;
+    -fx-cursor: hand;
+}
+.sidebar-nav-icon {
+    -fx-font-size: 15px;
+    -fx-text-fill: #8b8bab;
+    -fx-min-width: 26px;
+    -fx-alignment: center;
+    -fx-padding: 0;
+}
+.sidebar-nav-btn:hover .sidebar-nav-icon {
+    -fx-text-fill: #d4d4e8;
+}
+.sidebar-nav-btn.sidebar-nav-active .sidebar-nav-icon {
+    -fx-text-fill: #c4b5fd;
+}
+.sidebar-nav-btn:hover {
+    -fx-background-color: rgba(255,255,255,0.06);
+    -fx-text-fill: #f0f0fa;
+}
+.sidebar-nav-active {
+    -fx-background-color: rgba(139,92,246,0.22);
+    -fx-text-fill: #ede9fe;
+    -fx-border-color: rgba(167,139,250,0.35);
+    -fx-border-radius: 8;
+    -fx-border-width: 1;
+}
+.sidebar-sep {
+    -fx-opacity: 0.35;
+}
+.sidebar-library-heading {
+    -fx-font-size: 12px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #8b8bab;
+    -fx-padding: 0 0 0 4;
+}
+.sidebar-library-list {
+    -fx-background-color: rgba(255,255,255,0.03);
+    -fx-background-radius: 12;
+    -fx-border-color: rgba(255,255,255,0.06);
+    -fx-border-radius: 12;
+    -fx-border-width: 1;
+    -fx-padding: 4;
+}
+.sidebar-library-list .list-cell {
+    -fx-background-color: transparent;
+    -fx-text-fill: #d4d4e8;
+    -fx-font-size: 13px;
+    -fx-padding: 0 8 0 8;
+    -fx-background-radius: 8;
+}
+.sidebar-library-list .list-cell:hover {
+    -fx-background-color: rgba(139,92,246,0.12);
+}
+.sidebar-library-list .list-cell:selected {
+    -fx-background-color: rgba(139,92,246,0.22);
+    -fx-text-fill: #f5f3ff;
+}
+.sidebar-library-list .list-cell.liked-songs-cell {
+    -fx-text-fill: #fda4af;
+}
+.sidebar-library-placeholder {
+    -fx-text-fill: #6b6b88;
+    -fx-font-size: 12px;
+    -fx-padding: 12;
+}
+.sidebar-welcome {
+    -fx-font-size: 12px;
+    -fx-text-fill: #6b6b88;
+    -fx-padding: 0 0 0 4;
+}
+.sidebar-theme-btn {
+    -fx-background-color: rgba(255,255,255,0.05);
+    -fx-text-fill: #9d9db8;
+    -fx-font-size: 12px;
+    -fx-font-weight: bold;
+    -fx-background-radius: 8;
+    -fx-border-color: rgba(255,255,255,0.1);
+    -fx-border-radius: 8;
+    -fx-border-width: 1;
+    -fx-padding: 8 10 8 10;
+}
+.sidebar-theme-btn:hover {
+    -fx-background-color: rgba(255,255,255,0.09);
+    -fx-text-fill: #eeeef6;
+}
+
+/* Top bar (theme + log out) — full window width, actions right-aligned */
+.app-top-bar {
+    -fx-background-color: rgba(8, 8, 16, 0.72);
+    -fx-border-color: transparent transparent rgba(255, 255, 255, 0.07) transparent;
+    -fx-border-width: 0 0 1 0;
+}
+.top-bar-theme-btn {
+    -fx-background-color: rgba(255, 255, 255, 0.06);
+    -fx-text-fill: #c4c4dc;
+    -fx-font-size: 12px;
+    -fx-font-weight: bold;
+    -fx-background-radius: 999;
+    -fx-border-color: rgba(255, 255, 255, 0.12);
+    -fx-border-radius: 999;
+    -fx-border-width: 1;
+    -fx-padding: 8 16 8 16;
+}
+.top-bar-theme-btn:hover {
+    -fx-background-color: rgba(255, 255, 255, 0.11);
+    -fx-text-fill: #f4f4ff;
+}
+/* Log out — full pill styling (do not use generic btn-rose-soft here; modena defaults leak on some themes). */
+.top-bar-logout-btn {
+    -fx-font-size: 12px;
+    -fx-font-weight: bold;
+    -fx-padding: 8 16 8 16;
+    -fx-background-radius: 999;
+    -fx-border-radius: 999;
+    -fx-border-width: 1;
+    -fx-background-insets: 0;
+    -fx-border-insets: 0;
+    -fx-background-color: rgba(244, 63, 94, 0.14);
+    -fx-text-fill: #fda4af;
+    -fx-border-color: rgba(244, 63, 94, 0.35);
+    -fx-cursor: hand;
+}
+.top-bar-logout-btn:hover {
+    -fx-background-color: rgba(244, 63, 94, 0.22);
+    -fx-text-fill: #fecdd3;
+    -fx-border-color: rgba(251, 113, 133, 0.5);
 }
 
 /* Auth pages — centered card on gradient */
@@ -355,6 +613,11 @@
     -fx-border-width: 1;
     -fx-padding: 24;
     -fx-effect: dropshadow(gaussian, rgba(139,92,246,0.15), 20, 0, 0, 4);
+}
+
+/* In-playlist suggestions: sub-section inside .card (scroll with page, not a second floating card) */
+.playlist-suggestions-block {
+    -fx-padding: 4 0 0 0;
 }
 
 /* Colored border cards for feature grid */
@@ -702,6 +965,8 @@
    CONTEXT / POPUP MENUS
    ═══════════════════════════════════════════════════════════════════ */
 .context-menu {
+    /* Modena uses two background layers + insets (0, 1). One color here + leftover insets = dark corners. */
+    -fx-background-insets: 0;
     -fx-background-color: #161628;
     -fx-border-color: rgba(255,255,255,0.10);
     -fx-border-radius: 14;
@@ -718,6 +983,58 @@
 }
 .menu-item:hover { -fx-background-color: rgba(139,92,246,0.14); }
 .menu-item .label { -fx-text-fill: #eeeef6; }
+
+
+.context-menu.tv-song-actions-menu { -fx-min-width: 232px; }
+.context-menu.tv-search-song-menu { -fx-min-width: 188px; }
+
+/*
+ * Context menus render in a separate PopupWindow — they are not descendants of the
+ * main scene's .root.theme-light, so light styling must not rely on that ancestor.
+ * SongContextMenuBuilder adds .tv-context-light and sets the popup Scene fill in code.
+ */
+.context-menu.tv-context-light {
+    -fx-background-insets: 0;
+    -fx-background-color: #ffffff;
+    /* Border strokes can leave square-corner halos on popups; clip rounds the skin in Java. */
+    -fx-border-width: 0;
+    -fx-border-radius: 16;
+    -fx-background-radius: 16;
+    -fx-effect: null;
+    -fx-padding: 6;
+}
+.context-menu.tv-context-light .menu-item {
+    -fx-text-fill: #0f172a;
+}
+.context-menu.tv-context-light .menu-item .label { -fx-text-fill: #0f172a; }
+.context-menu.tv-context-light .menu-item:hover { -fx-background-color: rgba(124,58,237,0.08); }
+.context-menu.tv-context-light .menu-item.tv-menu-destructive,
+.context-menu.tv-context-light .menu-item.tv-menu-destructive .label { -fx-text-fill: #b91c1c; }
+.context-menu.tv-context-light .menu-item.tv-menu-destructive:hover {
+    -fx-background-color: rgba(220,38,38,0.10);
+}
+
+.menu-item.tv-menu-destructive { -fx-text-fill: #fda4af; }
+.menu-item.tv-menu-destructive .label { -fx-text-fill: #fda4af; }
+.menu-item.tv-menu-destructive:hover { -fx-background-color: rgba(244,63,94,0.12); }
+
+.root.theme-light .context-menu {
+    -fx-background-insets: 0;
+    -fx-background-color: #ffffff;
+    -fx-border-width: 0;
+    -fx-border-radius: 16;
+    -fx-background-radius: 16;
+    -fx-effect: null;
+    -fx-padding: 6;
+}
+.root.theme-light .menu-item {
+    -fx-text-fill: #0f172a;
+}
+.root.theme-light .menu-item .label { -fx-text-fill: #0f172a; }
+.root.theme-light .menu-item:hover { -fx-background-color: rgba(124,58,237,0.08); }
+.root.theme-light .menu-item.tv-menu-destructive,
+.root.theme-light .menu-item.tv-menu-destructive .label { -fx-text-fill: #b91c1c; }
+.root.theme-light .menu-item.tv-menu-destructive:hover { -fx-background-color: rgba(220,38,38,0.10); }
 
 /* ═══════════════════════════════════════════════════════════════════
    DIALOGS
@@ -873,6 +1190,10 @@
     -fx-background-color: rgba(3, 2, 14, 0.75);
 }
 
+.root.theme-light .overlay-backdrop {
+    -fx-background-color: rgba(15, 23, 42, 0.38);
+}
+
 .overlay-card {
     -fx-background-color: #0c0c1a;
     -fx-background-radius: 28;
@@ -880,6 +1201,31 @@
     -fx-border-radius: 28;
     -fx-border-width: 1;
     -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.70), 48, 0, 0, 16);
+}
+
+.root.theme-light .overlay-card {
+    -fx-background-color: #f8fafc;
+    -fx-border-color: rgba(124, 58, 237, 0.18);
+    -fx-effect: dropshadow(gaussian, rgba(76, 29, 149, 0.12), 36, 0, 0, 10);
+}
+
+.heading-md.expanded-artist-link {
+    -fx-text-fill: #9d9db8;
+    -fx-border-width: 0;
+    -fx-underline: false;
+}
+
+.expanded-time-label {
+    -fx-font-weight: bold;
+    -fx-text-fill: #9d9db8;
+}
+
+.root.theme-light .expanded-time-label {
+    -fx-text-fill: #475569;
+}
+
+.root.theme-light .overlay-card .page-header {
+    -fx-border-color: transparent transparent rgba(15,23,42,0.08) transparent;
 }
 
 /* Progress section inside expanded player */
@@ -892,9 +1238,25 @@
     -fx-padding: 16 20 14 20;
 }
 
+
+.root.theme-light .progress-card {
+    -fx-background-color: rgba(15, 23, 42, 0.04);
+    -fx-border-color: rgba(15, 23, 42, 0.08);
+}
+
 /* ═══════════════════════════════════════════════════════════════════
    QUEUE PANEL
    ═══════════════════════════════════════════════════════════════════ */
+.queue-panel-header {
+    -fx-padding: 22 24 16 24;
+    -fx-border-color: transparent transparent rgba(255,255,255,0.06) transparent;
+    -fx-border-width: 0 0 1 0;
+}
+
+.root.theme-light .queue-panel-header {
+    -fx-border-color: transparent transparent rgba(15,23,42,0.10) transparent;
+}
+
 .queue-panel {
     -fx-background-color: #0c0c1a;
     -fx-background-radius: 24 0 0 24;
@@ -904,10 +1266,20 @@
     -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.55), 40, 0, -6, 0);
 }
 
+.root.theme-light .queue-panel {
+    -fx-background-color: #fafafa;
+    -fx-border-color: rgba(124,58,237,0.14) transparent rgba(124,58,237,0.10) rgba(124,58,237,0.14);
+    -fx-effect: dropshadow(gaussian, rgba(15,23,42,0.12), 28, 0, -4, 0);
+}
+
 .now-playing-row {
     -fx-background-color: rgba(139,92,246,0.07);
     -fx-background-radius: 14;
     -fx-padding: 10 14 10 14;
+}
+
+.root.theme-light .now-playing-row {
+    -fx-background-color: rgba(124,58,237,0.10);
 }
 
 #queuePanelOverlay .list-view {
@@ -929,6 +1301,10 @@
 #queuePanelOverlay .separator .line {
     -fx-border-color: rgba(255,255,255,0.04);
     -fx-border-width: 0 0 1 0;
+}
+
+.root.theme-light #queuePanelOverlay .separator .line {
+    -fx-border-color: rgba(15,23,42,0.08);
 }
 
 /* ═══════════════════════════════════════════════════════════════════
@@ -1075,4 +1451,450 @@
 .status-success {
     -fx-text-fill: #22c55e;
     -fx-font-size: 13px;
+}
+
+/* --- App chrome: persistent navigation --- */
+.chrome-outer {
+    -fx-padding: 12 32 8 32;
+    -fx-background-color: transparent;
+}
+
+.chrome-bar {
+    -fx-padding: 11 18 11 18;
+    -fx-spacing: 14;
+    -fx-alignment: center-left;
+    -fx-background-color: linear-gradient(to bottom,
+            rgba(22, 22, 40, 0.97),
+            rgba(10, 10, 22, 0.95));
+    -fx-background-radius: 22;
+    -fx-border-color: rgba(139, 92, 246, 0.28);
+    -fx-border-radius: 22;
+    -fx-border-width: 1;
+    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.55), 32, 0, 0, 10);
+}
+
+.chrome-brand {
+    -fx-cursor: hand;
+}
+
+.chrome-logo-mark {
+    -fx-background-color: linear-gradient(to bottom right, #7c3aed, #4c1d95 55%, #312e81);
+    -fx-background-radius: 14;
+    -fx-border-color: rgba(255, 255, 255, 0.14);
+    -fx-border-radius: 14;
+    -fx-border-width: 1;
+}
+
+.chrome-logo-glyph {
+    -fx-font-size: 20px;
+    -fx-text-fill: #f5f3ff;
+}
+
+.chrome-title {
+    -fx-font-size: 16px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #f4f4ff;
+}
+
+.chrome-tagline {
+    -fx-font-size: 11px;
+    -fx-text-fill: #8b8bab;
+}
+
+.chrome-nav-btn {
+    -fx-background-color: transparent;
+    -fx-text-fill: #9d9db8;
+    -fx-font-size: 13px;
+    -fx-font-weight: bold;
+    -fx-background-radius: 999;
+    -fx-padding: 9 16 9 16;
+}
+
+.chrome-nav-btn:hover {
+    -fx-background-color: rgba(255, 255, 255, 0.07);
+    -fx-text-fill: #eeeef6;
+}
+
+.chrome-nav-active {
+    -fx-background-color: rgba(139, 92, 246, 0.26);
+    -fx-text-fill: #ede9fe;
+    -fx-border-color: rgba(167, 139, 250, 0.45);
+    -fx-border-radius: 999;
+    -fx-border-width: 1;
+}
+
+.chrome-theme-btn {
+    -fx-background-color: rgba(255, 255, 255, 0.05);
+    -fx-text-fill: #9d9db8;
+    -fx-font-size: 12px;
+    -fx-font-weight: bold;
+    -fx-background-radius: 999;
+    -fx-border-color: rgba(255, 255, 255, 0.1);
+    -fx-border-radius: 999;
+    -fx-border-width: 1;
+    -fx-padding: 8 14 8 14;
+}
+
+.chrome-theme-btn:hover {
+    -fx-background-color: rgba(255, 255, 255, 0.09);
+    -fx-text-fill: #eeeef6;
+}
+
+.chrome-welcome {
+    -fx-font-size: 12px;
+    -fx-text-fill: #6b6b88;
+    -fx-max-width: 180;
+}
+
+/* --- Light theme: surfaces, chrome, toggles, player bar; list text via AppTheme + CellStyleKit. --- */
+.root.theme-light {
+    -fx-background-color: #e8e6ef;
+}
+
+/* Same-element root (normal navigation) */
+.root.theme-light.page-bg,
+/* Descendant when scene root is an overlay StackPane wrapper */
+.root.theme-light .page-bg {
+    -fx-background-color: linear-gradient(to bottom right, #f2f0f8 0%, #e4e0f2 55%, #ebe7f5 100%);
+}
+
+.root.theme-light .chrome-bar {
+    -fx-background-color: linear-gradient(to bottom, rgba(255, 255, 255, 0.98), rgba(245, 243, 252, 0.96));
+    -fx-border-color: rgba(124, 58, 237, 0.22);
+    -fx-effect: dropshadow(gaussian, rgba(76, 29, 149, 0.12), 24, 0, 0, 6);
+}
+
+.root.theme-light .chrome-title {
+    -fx-text-fill: #1e1b2e;
+}
+
+.root.theme-light .chrome-tagline {
+    -fx-text-fill: #64748b;
+}
+
+.root.theme-light .chrome-nav-btn {
+    -fx-text-fill: #475569;
+}
+
+.root.theme-light .chrome-nav-btn:hover {
+    -fx-background-color: rgba(124, 58, 237, 0.08);
+    -fx-text-fill: #312e81;
+}
+
+.root.theme-light .chrome-nav-active {
+    -fx-background-color: rgba(124, 58, 237, 0.16);
+    -fx-text-fill: #4c1d95;
+    -fx-border-color: rgba(124, 58, 237, 0.35);
+}
+
+.root.theme-light .chrome-theme-btn {
+    -fx-background-color: rgba(15, 23, 42, 0.06);
+    -fx-text-fill: #475569;
+    -fx-border-color: rgba(15, 23, 42, 0.1);
+}
+
+.root.theme-light .chrome-welcome {
+    -fx-text-fill: #64748b;
+}
+
+.root.theme-light .home-libraries {
+    -fx-background-color: linear-gradient(to bottom right, rgba(255,255,255,0.98), rgba(237,233,254,0.55));
+    -fx-border-color: rgba(124, 58, 237, 0.22);
+    -fx-effect: dropshadow(gaussian, rgba(76, 29, 149, 0.10), 22, 0, 0, 5);
+}
+
+.root.theme-light .playlist-chip {
+    -fx-background-color: rgba(124, 58, 237, 0.06);
+    -fx-text-fill: #1e1b4b;
+    -fx-border-color: rgba(124, 58, 237, 0.22);
+}
+.root.theme-light .playlist-chip:hover {
+    -fx-background-color: rgba(124, 58, 237, 0.12);
+    -fx-text-fill: #312e81;
+}
+.root.theme-light .playlist-chip-more {
+    -fx-background-color: rgba(124, 58, 237, 0.08);
+    -fx-text-fill: #5b21b6;
+}
+
+.root.theme-light .home-playlist-tile {
+    -fx-background-color: rgba(255,255,255,0.92);
+    -fx-border-color: rgba(124,58,237,0.18);
+    -fx-effect: dropshadow(gaussian, rgba(76,29,149,0.10), 16, 0, 0, 3);
+}
+.root.theme-light .home-playlist-tile:hover {
+    -fx-background-color: rgba(124,58,237,0.08);
+    -fx-border-color: rgba(124,58,237,0.35);
+}
+.root.theme-light .home-playlist-tile-more {
+    -fx-background-color: rgba(124,58,237,0.06);
+}
+.root.theme-light .home-playlist-tile-more:hover {
+    -fx-background-color: rgba(124,58,237,0.12);
+}
+.root.theme-light .home-playlist-tile-title {
+    -fx-text-fill: #0f172a;
+}
+.root.theme-light .home-playlist-tile-art {
+    -fx-background-color: linear-gradient(to bottom right, #e9d5ff, #c4b5fd 45%, #a78bfa);
+    -fx-border-color: rgba(124, 58, 237, 0.22);
+}
+.root.theme-light .home-playlist-tile-art-more {
+    -fx-background-color: linear-gradient(to bottom right, #ddd6fe, #c4b5fd 50%, #8b5cf6);
+    -fx-border-color: rgba(124, 58, 237, 0.28);
+}
+.root.theme-light .home-playlist-tile-glyph {
+    -fx-text-fill: #5b21b6;
+}
+.root.theme-light .home-playlist-tile-glyph-more {
+    -fx-text-fill: #4c1d95;
+}
+.root.theme-light .app-sidebar {
+    -fx-background-color: linear-gradient(to bottom, #f8f7fc 0%, #efecf7 100%);
+    -fx-border-color: transparent rgba(15,23,42,0.08) transparent transparent;
+}
+.root.theme-light .sidebar-title {
+    -fx-text-fill: #1e1b2e;
+}
+.root.theme-light .sidebar-tagline {
+    -fx-text-fill: #64748b;
+}
+.root.theme-light .sidebar-nav-btn {
+    -fx-text-fill: #475569;
+}
+.root.theme-light .sidebar-nav-btn:hover {
+    -fx-background-color: rgba(124,58,237,0.08);
+    -fx-text-fill: #312e81;
+}
+.root.theme-light .sidebar-nav-active {
+    -fx-background-color: rgba(124,58,237,0.14);
+    -fx-text-fill: #4c1d95;
+    -fx-border-color: rgba(124,58,237,0.30);
+}
+.root.theme-light .sidebar-nav-icon {
+    -fx-text-fill: #64748b;
+}
+.root.theme-light .sidebar-nav-btn:hover .sidebar-nav-icon {
+    -fx-text-fill: #475569;
+}
+.root.theme-light .sidebar-nav-btn.sidebar-nav-active .sidebar-nav-icon {
+    -fx-text-fill: #5b21b6;
+}
+.root.theme-light .sidebar-library-heading {
+    -fx-text-fill: #64748b;
+}
+.root.theme-light .sidebar-library-list {
+    -fx-background-color: rgba(255,255,255,0.75);
+    -fx-border-color: rgba(15,23,42,0.08);
+}
+.root.theme-light .sidebar-library-list .list-cell {
+    -fx-text-fill: #1e293b;
+}
+.root.theme-light .sidebar-library-list .list-cell:hover {
+    -fx-background-color: rgba(124,58,237,0.08);
+}
+.root.theme-light .sidebar-library-list .list-cell:selected {
+    -fx-background-color: rgba(124,58,237,0.14);
+    -fx-text-fill: #4c1d95;
+}
+.root.theme-light .sidebar-library-list .list-cell.liked-songs-cell {
+    -fx-text-fill: #b91c1c;
+}
+.root.theme-light .sidebar-library-placeholder {
+    -fx-text-fill: #64748b;
+}
+.root.theme-light .sidebar-welcome {
+    -fx-text-fill: #64748b;
+}
+.root.theme-light .sidebar-theme-btn {
+    -fx-background-color: rgba(15,23,42,0.06);
+    -fx-text-fill: #475569;
+    -fx-border-color: rgba(15,23,42,0.1);
+}
+
+.root.theme-light .app-top-bar {
+    -fx-background-color: rgba(255, 255, 255, 0.88);
+    -fx-border-color: transparent transparent rgba(15, 23, 42, 0.08) transparent;
+}
+.root.theme-light .top-bar-theme-btn {
+    -fx-background-color: rgba(15, 23, 42, 0.06);
+    -fx-text-fill: #475569;
+    -fx-border-color: rgba(15, 23, 42, 0.12);
+}
+.root.theme-light .top-bar-theme-btn:hover {
+    -fx-background-color: rgba(124, 58, 237, 0.1);
+    -fx-text-fill: #312e81;
+}
+.root.theme-light .top-bar-logout-btn {
+    -fx-background-color: rgba(225, 29, 72, 0.1);
+    -fx-text-fill: #be123c;
+    -fx-border-color: rgba(225, 29, 72, 0.28);
+    -fx-border-width: 1;
+    -fx-border-radius: 999;
+    -fx-background-radius: 999;
+}
+.root.theme-light .top-bar-logout-btn:hover {
+    -fx-background-color: rgba(225, 29, 72, 0.16);
+    -fx-text-fill: #9f1239;
+    -fx-border-color: rgba(190, 18, 60, 0.4);
+}
+
+.root.theme-light .heading-2xl,
+.root.theme-light .heading-xl,
+.root.theme-light .heading-lg,
+.root.theme-light .heading-md,
+.root.theme-light .heading-sm,
+.root.theme-light .body {
+    -fx-text-fill: #15121f;
+}
+
+.root.theme-light .heading-md.expanded-artist-link {
+    -fx-text-fill: #475569;
+}
+
+.root.theme-light .body-sm,
+.root.theme-light .caption {
+    -fx-text-fill: #5c5670;
+}
+
+.root.theme-light .overline,
+.root.theme-light .text-muted {
+    -fx-text-fill: #64748b;
+}
+
+.root.theme-light .card,
+.root.theme-light .card-elevated,
+.root.theme-light .card-glow {
+    -fx-background-color: rgba(255, 255, 255, 0.92);
+    -fx-border-color: rgba(124, 58, 237, 0.12);
+    -fx-effect: dropshadow(gaussian, rgba(76, 29, 149, 0.08), 20, 0, 0, 4);
+}
+
+.root.theme-light .text-accent {
+    -fx-text-fill: #6d28d9;
+}
+
+.root.theme-light TextField,
+.root.theme-light .text-input {
+    -fx-background-color: rgba(255, 255, 255, 0.95);
+    -fx-text-fill: #15121f;
+    -fx-prompt-text-fill: #94a3b8;
+    -fx-border-color: rgba(15, 23, 42, 0.1);
+    -fx-border-radius: 12;
+    -fx-background-radius: 12;
+}
+
+.root.theme-light Separator {
+    -fx-border-color: rgba(15, 23, 42, 0.08);
+}
+
+.root.theme-light .hero-gradient {
+    -fx-background-color: linear-gradient(to right, rgba(237, 233, 254, 0.95), rgba(255, 255, 255, 0.55));
+    -fx-border-color: rgba(124, 58, 237, 0.15);
+}
+
+.root.theme-light .card-time-gradient {
+    -fx-background-color: linear-gradient(to bottom right, #ede9fe, #f8fafc);
+    -fx-border-color: rgba(124, 58, 237, 0.2);
+}
+
+.root.theme-light .stat-number {
+    -fx-text-fill: #5b21b6;
+}
+
+.root.theme-light .btn-toggle-inactive {
+    -fx-background-color: rgba(15, 23, 42, 0.06);
+    -fx-text-fill: #334155;
+    -fx-border-color: rgba(15, 23, 42, 0.12);
+}
+.root.theme-light .btn-toggle-inactive:hover {
+    -fx-background-color: rgba(124, 58, 237, 0.1);
+    -fx-text-fill: #1e1b4b;
+}
+
+.root.theme-light .btn-rose-soft {
+    -fx-background-color: rgba(225, 29, 72, 0.08);
+    -fx-text-fill: #be123c;
+    -fx-border-color: rgba(225, 29, 72, 0.22);
+}
+.root.theme-light .btn-rose-soft:hover {
+    -fx-background-color: rgba(225, 29, 72, 0.14);
+    -fx-text-fill: #9f1239;
+}
+
+.root.theme-light .btn-secondary {
+    -fx-text-fill: #334155;
+    -fx-border-color: rgba(15, 23, 42, 0.12);
+    -fx-background-color: rgba(255, 255, 255, 0.7);
+}
+.root.theme-light .btn-secondary:hover {
+    -fx-text-fill: #0f172a;
+}
+
+.root.theme-light .btn-ghost {
+    -fx-text-fill: #475569;
+}
+.root.theme-light .btn-ghost:hover {
+    -fx-text-fill: #0f172a;
+}
+
+/* Mini-player: light shell so it matches the rest of the app */
+.root.theme-light .player-bar {
+    -fx-background-color: linear-gradient(to bottom, #faf8ff, #f1effa);
+    -fx-border-color: rgba(124, 58, 237, 0.15) transparent transparent transparent;
+}
+
+.root.theme-light .player-btn {
+    -fx-text-fill: #475569;
+}
+.root.theme-light .player-btn:hover {
+    -fx-background-color: rgba(124, 58, 237, 0.1);
+    -fx-text-fill: #312e81;
+}
+
+.root.theme-light .player-btn-main {
+    -fx-background-color: #5b21b6;
+    -fx-text-fill: white;
+}
+.root.theme-light .player-btn-main:hover {
+    -fx-background-color: #6d28d9;
+}
+
+.root.theme-light .player-btn-like,
+.root.theme-light .player-btn-queue {
+    -fx-text-fill: #475569;
+}
+
+.root.theme-light .player-btn-like-on {
+    -fx-background-color: rgba(225, 29, 72, 0.12);
+    -fx-text-fill: #be123c;
+    -fx-border-color: rgba(225, 29, 72, 0.28);
+}
+
+.root.theme-light .player-btn-queue-active {
+    -fx-background-color: rgba(124, 58, 237, 0.14);
+    -fx-text-fill: #5b21b6;
+    -fx-border-color: rgba(124, 58, 237, 0.3);
+}
+
+.root.theme-light .player-btn-active {
+    -fx-background-color: rgba(124, 58, 237, 0.16);
+    -fx-text-fill: #5b21b6;
+    -fx-border-color: rgba(124, 58, 237, 0.35);
+}
+
+.root.theme-light .album-art-mini {
+    -fx-background-color: linear-gradient(to bottom right, #ede9fe, #ddd6fe);
+    -fx-border-color: rgba(124, 58, 237, 0.25);
+}
+
+.root.theme-light .album-art-large {
+    -fx-background-color: linear-gradient(to bottom right, #ede9fe, #e9d5ff);
+    -fx-border-color: rgba(124, 58, 237, 0.22);
+    -fx-effect: dropshadow(gaussian, rgba(124, 58, 237, 0.15), 24, 0, 0, 6);
+}
+
+.root.theme-light .list-view,
+.root.theme-light .list-view:focused {
+    -fx-background-color: transparent;
 }

@@ -76,6 +76,7 @@ public class QueuePanelController {
         player.currentSongProperty().addListener((obs, o, n) -> refreshAll());
         player.playingProperty().addListener((obs, o, n) -> refreshNowPlaying());
         player.getUserQueue().addListener((ListChangeListener<Song>) c -> refreshAll());
+        player.getAutoplaySuggestionsList().addListener((ListChangeListener<Song>) c -> refreshAll());
 
         visible.addListener((obs, o, n) -> {
             if (n) { refreshAll(); openPanel(); }
@@ -226,12 +227,12 @@ public class QueuePanelController {
             HBox row = new HBox(8);
             row.setAlignment(Pos.CENTER_LEFT);
             row.setPadding(new Insets(7, 10, 7, 10));
-            row.setStyle(CellStyleKit.ROW_DEFAULT + " -fx-cursor: hand;");
+            row.setStyle(CellStyleKit.getRowDefault() + " -fx-cursor: hand;");
 
             Label indexLabel = new Label(String.valueOf(getIndex() + 1));
             indexLabel.setMinWidth(22);
             indexLabel.setAlignment(Pos.CENTER);
-            indexLabel.setStyle("-fx-text-fill: " + CellStyleKit.TEXT_MUTED
+            indexLabel.setStyle("-fx-text-fill: " + CellStyleKit.getTextMuted()
                     + "; -fx-font-size: 12px; -fx-font-weight: bold;");
 
             VBox info = new VBox(1);
@@ -239,12 +240,12 @@ public class QueuePanelController {
             info.setMaxWidth(220);
 
             Label title = new Label(song.title());
-            title.setStyle("-fx-text-fill: " + CellStyleKit.TEXT_PRIMARY
+            title.setStyle("-fx-text-fill: " + CellStyleKit.getTextPrimary()
                     + "; -fx-font-size: 13px; -fx-font-weight: bold;");
             title.setMaxWidth(220);
 
             HBox meta = CellStyleKit.songMetaLine(
-                    song.artist(), song.genre(), QueuePanelController.this::openArtistProfile);
+                    song.artist(), null, QueuePanelController.this::openArtistProfile);
             meta.setMaxWidth(220);
 
             info.getChildren().add(title);
@@ -253,7 +254,7 @@ public class QueuePanelController {
             }
 
             Label duration = new Label(formatDuration(song.durationSeconds()));
-            duration.setStyle("-fx-text-fill: " + CellStyleKit.TEXT_MUTED
+            duration.setStyle("-fx-text-fill: " + CellStyleKit.getTextMuted()
                     + "; -fx-font-size: 11px;");
 
             row.getChildren().addAll(indexLabel, info, duration);
@@ -278,11 +279,18 @@ public class QueuePanelController {
                 Label dragHandle = new Label("\u2261");
                 dragHandle.setMinWidth(20);
                 dragHandle.setAlignment(Pos.CENTER);
-                dragHandle.setStyle("-fx-text-fill: #5c5c78; -fx-font-size: 18px; -fx-cursor: move;");
+                dragHandle.setStyle(
+                        "-fx-text-fill: " + CellStyleKit.getTextMuted() + "; -fx-font-size: 18px; -fx-cursor: move;");
                 dragHandle.setOnMouseEntered(e ->
-                        dragHandle.setStyle("-fx-text-fill: #9d9db8; -fx-font-size: 18px; -fx-cursor: move;"));
+                        dragHandle.setStyle(
+                                "-fx-text-fill: "
+                                        + CellStyleKit.getTextSecondary()
+                                        + "; -fx-font-size: 18px; -fx-cursor: move;"));
                 dragHandle.setOnMouseExited(e ->
-                        dragHandle.setStyle("-fx-text-fill: #5c5c78; -fx-font-size: 18px; -fx-cursor: move;"));
+                        dragHandle.setStyle(
+                                "-fx-text-fill: "
+                                        + CellStyleKit.getTextMuted()
+                                        + "; -fx-font-size: 18px; -fx-cursor: move;"));
 
                 row.getChildren().addAll(removeBtn, dragHandle);
             }
@@ -295,8 +303,8 @@ public class QueuePanelController {
                 }
             });
 
-            row.setOnMouseEntered(e -> row.setStyle(CellStyleKit.ROW_HOVER + " -fx-cursor: hand;"));
-            row.setOnMouseExited(e -> row.setStyle(CellStyleKit.ROW_DEFAULT + " -fx-cursor: hand;"));
+            row.setOnMouseEntered(e -> row.setStyle(CellStyleKit.getRowHover() + " -fx-cursor: hand;"));
+            row.setOnMouseExited(e -> row.setStyle(CellStyleKit.getRowDefault() + " -fx-cursor: hand;"));
 
             setGraphic(row);
             setText(null);

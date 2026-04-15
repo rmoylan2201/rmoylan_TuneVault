@@ -1,16 +1,13 @@
 package com.example.tunevaultfx.findyourgenre;
 
-import com.example.tunevaultfx.util.SceneUtil;
 import com.example.tunevaultfx.util.UiMotionUtil;
 import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
-import javafx.scene.Node;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.layout.VBox;
 
-import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -71,11 +68,6 @@ public class FindYourGenrePageController {
     @FXML private void handleAnswer3() { chooseAnswer(2); }
     @FXML private void handleAnswer4() { chooseAnswer(3); }
     @FXML private void handleRestartQuiz() { resetQuiz(); }
-
-    @FXML
-    private void handleBackToMenu(ActionEvent event) throws IOException {
-        SceneUtil.goBack((Node) event.getSource());
-    }
 
     // ── Quiz logic ────────────────────────────────────────────────
 
