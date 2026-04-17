@@ -11,6 +11,7 @@ import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 
 import java.sql.SQLException;
+import java.util.ArrayList;
 
 /**
  * Handles playlist operations such as creating, deleting,
@@ -95,12 +96,87 @@ public class PlaylistService {
             boolean deleted = userProfileDAO.deletePlaylist(profile.getUsername(), playlistName);
             if (deleted) {
                 profile.getPlaylists().remove(playlistName);
+                profile.getPinnedPlaylistsOrdered().remove(playlistName);
+                persistPins(profile);
+                MusicPlayerController.getInstance().onPlaylistDeleted(playlistName);
             }
             return deleted;
         } catch (SQLException e) {
             e.printStackTrace();
             return false;
         }
+    }
+
+    public boolean renamePlaylist(UserProfile profile, String oldName, String newName) {
+        if (profile == null || oldName == null || newName == null) {
+            return false;
+        }
+        if (isProtectedPlaylist(oldName) || PlaylistNames.isLikedSongs(newName.trim())) {
+            return false;
+        }
+        ObservableList<Song> list = profile.getPlaylists().get(oldName);
+        if (list == null) {
+            return false;
+        }
+        try {
+            if (!userProfileDAO.renamePlaylist(profile.getUsername(), oldName, newName)) {
+                return false;
+            }
+            SessionManager.setPendingPlaylistRenameSelection(newName.trim());
+            profile.getPlaylists().put(newName.trim(), list);
+            profile.getPlaylists().remove(oldName);
+            var pins = profile.getPinnedPlaylistsOrdered();
+            int i = pins.indexOf(oldName);
+            if (i >= 0) {
+                pins.set(i, newName.trim());
+                persistPins(profile);
+            }
+            return true;
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+
+    public boolean isPlaylistPinned(UserProfile profile, String playlistName) {
+        if (profile == null || playlistName == null) {
+            return false;
+        }
+        return profile.getPinnedPlaylistsOrdered().contains(playlistName);
+    }
+
+    /**
+     * @param pin true to pin, false to unpin
+     * @return false if pin was requested but the cap was reached
+     */
+    public boolean setPlaylistPinned(UserProfile profile, String playlistName, boolean pin) {
+        if (profile == null || playlistName == null) {
+            return false;
+        }
+        var pins = profile.getPinnedPlaylistsOrdered();
+        if (pin) {
+            if (pins.contains(playlistName)) {
+                return true;
+            }
+            if (pins.size() >= PlaylistNames.MAX_USER_PINNED_PLAYLISTS) {
+                return false;
+            }
+            pins.add(playlistName);
+        } else {
+            pins.remove(playlistName);
+        }
+        try {
+            persistPins(profile);
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return false;
+        }
+        return true;
+    }
+
+    private void persistPins(UserProfile profile) throws SQLException {
+        userProfileDAO.syncPlaylistPins(
+                profile.getUsername(), new ArrayList<>(profile.getPinnedPlaylistsOrdered()));
     }
 
     public boolean addSongToPlaylist(UserProfile profile, String playlistName, Song song) {
@@ -184,6 +260,31 @@ public class PlaylistService {
 
     public boolean isProtectedPlaylist(String playlistName) {
         return PlaylistNames.isLikedSongs(playlistName);
+    }
+
+    /** Non-system playlists only. Persists {@code playlist.is_public}. */
+    public boolean setPlaylistPublic(UserProfile profile, String playlistName, boolean isPublic) {
+        if (profile == null || PlaylistNames.isLikedSongs(playlistName)) {
+            return false;
+        }
+        try {
+            return userProfileDAO.setPlaylistPublic(profile.getUsername(), playlistName, isPublic);
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+
+    public boolean isPlaylistPublic(UserProfile profile, String playlistName) {
+        if (profile == null) {
+            return false;
+        }
+        try {
+            return userProfileDAO.isPlaylistPublic(profile.getUsername(), playlistName);
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return false;
+        }
     }
 
     /**

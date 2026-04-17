@@ -7,10 +7,13 @@ import com.example.tunevaultfx.playlist.service.PlaylistPickerService;
 import com.example.tunevaultfx.playlist.service.PlaylistService;
 import com.example.tunevaultfx.session.SessionManager;
 import com.example.tunevaultfx.user.UserProfile;
+import com.example.tunevaultfx.view.FxmlResources;
 import javafx.scene.Node;
 import javafx.scene.Scene;
 import javafx.scene.control.ContextMenu;
 import javafx.scene.control.MenuItem;
+
+import java.io.IOException;
 
 /**
  * Right-click / secondary-click and overflow (⋯) menus for song rows.
@@ -37,6 +40,23 @@ public final class SongContextMenuBuilder {
                         menu.hide();
                     });
             menu.getItems().add(playNext);
+        }
+
+        if (spec.includeViewSongDetails) {
+            MenuItem viewSong = new MenuItem("View song details");
+            viewSong.setOnAction(
+                    e -> {
+                        SessionManager.setSelectedSong(song);
+                        if (anchor != null) {
+                            try {
+                                SceneUtil.switchScene(anchor, FxmlResources.SONG_PROFILE);
+                            } catch (IOException ex) {
+                                ex.printStackTrace();
+                            }
+                        }
+                        menu.hide();
+                    });
+            menu.getItems().add(viewSong);
         }
 
         if (spec.includeAddToPlaylist) {
@@ -94,6 +114,7 @@ public final class SongContextMenuBuilder {
     /** Configuration for {@link #build(Song, Node, Spec)}. */
     public static final class Spec {
         boolean includePlayNext = true;
+        boolean includeViewSongDetails = true;
         boolean includeAddToPlaylist = true;
         String addToPlaylistMenuLabel;
         boolean includeLikeToggle = true;
@@ -102,6 +123,11 @@ public final class SongContextMenuBuilder {
 
         public Spec playNext(boolean v) {
             this.includePlayNext = v;
+            return this;
+        }
+
+        public Spec viewSongDetails(boolean v) {
+            this.includeViewSongDetails = v;
             return this;
         }
 

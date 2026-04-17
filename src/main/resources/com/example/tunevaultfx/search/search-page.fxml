@@ -18,33 +18,23 @@
     </left>
     <!-- ── CENTER ────────────────────────────────── -->
     <center>
-        <VBox spacing="0" style="-fx-padding: 16 32 0 32;">
+        <VBox spacing="0" style="-fx-padding: 16 32 0 32;" maxWidth="Infinity" maxHeight="Infinity">
 
-            <!-- Search bar card (always visible) -->
-            <VBox fx:id="searchInputCard" spacing="10" styleClass="card">
-
-                <Label text="What do you want to play?" styleClass="heading-lg"/>
-
-                <HBox spacing="10" alignment="CENTER_LEFT">
-                    <TextField fx:id="searchField"
-                               HBox.hgrow="ALWAYS"
-                               promptText="Search songs, artists, albums, genres…"
-                               prefHeight="46"/>
-
-                    <Button text="✕  Clear"
-                            onAction="#handleClearSearch"
-                            styleClass="btn-secondary"/>
-                </HBox>
-
+            <VBox fx:id="searchSummaryCard" spacing="8" styleClass="card" VBox.vgrow="NEVER">
+                <Label text="Search" styleClass="heading-lg"/>
+                <Label text="Use the bar at the top of the window. Results appear below."
+                       styleClass="body-sm"
+                       wrapText="true"
+                       maxWidth="720"/>
                 <Label fx:id="resultsSummaryLabel"
                        text=""
                        styleClass="caption"/>
             </VBox>
 
-            <Region prefHeight="16"/>
+            <Region prefHeight="16" VBox.vgrow="NEVER"/>
 
             <!-- IDLE: Recent searches (visible when search is empty) -->
-            <VBox fx:id="recentSection" spacing="0" styleClass="card">
+            <VBox fx:id="recentSection" spacing="0" styleClass="card" VBox.vgrow="ALWAYS" maxHeight="Infinity">
 
                 <HBox alignment="CENTER_LEFT" style="-fx-padding: 0 0 14 0;">
                     <Label text="Recent Searches" styleClass="heading-md"/>
@@ -54,7 +44,7 @@
                             styleClass="btn-ghost"/>
                 </HBox>
 
-                <ListView fx:id="recentSearchesListView" prefHeight="460"/>
+                <ListView fx:id="recentSearchesListView" minHeight="200" VBox.vgrow="ALWAYS" maxHeight="Infinity"/>
             </VBox>
 
             <!-- RESULTS: Shown while typing (scrollable) -->
@@ -63,9 +53,47 @@
                         hbarPolicy="NEVER"
                         vbarPolicy="AS_NEEDED"
                         visible="false"
-                        managed="false">
+                        managed="false"
+                        minHeight="240"
+                        maxWidth="Infinity"
+                        maxHeight="Infinity"
+                        VBox.vgrow="ALWAYS">
                 <content>
                     <VBox spacing="16" style="-fx-padding: 0 0 28 0;">
+
+                        <!-- People -->
+                        <VBox fx:id="userResultsSection"
+                              spacing="0"
+                              visible="false"
+                              managed="false"
+                              styleClass="card">
+
+                            <HBox alignment="CENTER_LEFT" spacing="10" style="-fx-padding: 0 0 14 0;">
+                                <StackPane styleClass="icon-box-sm, icon-box-teal">
+                                    <Label text="\u263A" style="-fx-font-size: 14px;"/>
+                                </StackPane>
+                                <Label text="People" styleClass="heading-md"/>
+                            </HBox>
+
+                            <ListView fx:id="userResultsListView" prefHeight="160"/>
+                        </VBox>
+
+                        <!-- Public playlists -->
+                        <VBox fx:id="publicPlaylistResultsSection"
+                              spacing="0"
+                              visible="false"
+                              managed="false"
+                              styleClass="card">
+
+                            <HBox alignment="CENTER_LEFT" spacing="10" style="-fx-padding: 0 0 14 0;">
+                                <StackPane styleClass="icon-box-sm, icon-box-violet">
+                                    <Label text="\u266A" styleClass="text-accent"/>
+                                </StackPane>
+                                <Label text="Public playlists" styleClass="heading-md"/>
+                            </HBox>
+
+                            <ListView fx:id="publicPlaylistResultsListView" prefHeight="200"/>
+                        </VBox>
 
                         <!-- Songs -->
                         <VBox fx:id="songResultsSection"

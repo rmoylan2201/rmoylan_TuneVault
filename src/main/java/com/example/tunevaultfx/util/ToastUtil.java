@@ -18,6 +18,7 @@ import javafx.util.Duration;
  *   ToastUtil.success(someNode.getScene(), "Song added to queue");
  *   ToastUtil.error(someNode.getScene(), "Could not save playlist");
  *   ToastUtil.info(someNode.getScene(), "3 songs imported");
+ *   ToastUtil.warning(someNode.getScene(), "You can only pin 3 playlists.");
  * </pre>
  */
 public final class ToastUtil {
@@ -26,27 +27,38 @@ public final class ToastUtil {
 
     private static final Duration SLIDE_IN  = Duration.millis(250);
     private static final Duration DISPLAY   = Duration.millis(2400);
+    /** Longer hold for messages that need a deliberate read (limits, warnings). */
+    private static final Duration DISPLAY_PROMINENT = Duration.millis(5200);
     private static final Duration SLIDE_OUT = Duration.millis(200);
 
     public static void success(Scene scene, String message) {
-        show(scene, message, "toast", "toast-success");
+        show(scene, message, DISPLAY, 460, "toast", "toast-success");
     }
 
     public static void error(Scene scene, String message) {
-        show(scene, message, "toast", "toast-error");
+        show(scene, message, DISPLAY, 460, "toast", "toast-error");
     }
 
     public static void info(Scene scene, String message) {
-        show(scene, message, "toast", "toast-info");
+        show(scene, message, DISPLAY, 460, "toast", "toast-info");
     }
 
-    private static void show(Scene scene, String message, String... cssClasses) {
+    /**
+     * High-contrast toast that stays longer — use for important limits or policy messages
+     * that are easy to miss with a standard info toast.
+     */
+    public static void warning(Scene scene, String message) {
+        show(scene, message, DISPLAY_PROMINENT, 540, "toast", "toast-warning");
+    }
+
+    private static void show(
+            Scene scene, String message, Duration holdDuration, double maxWidth, String... cssClasses) {
         if (scene == null || scene.getRoot() == null) return;
 
         Label toast = new Label(message);
         toast.getStyleClass().addAll(cssClasses);
         toast.setMouseTransparent(true);
-        toast.setMaxWidth(460);
+        toast.setMaxWidth(maxWidth);
         toast.setWrapText(true);
 
         StackPane.setAlignment(toast, Pos.TOP_CENTER);
@@ -55,17 +67,17 @@ public final class ToastUtil {
 
         if (scene.getRoot() instanceof StackPane sp) {
             sp.getChildren().add(toast);
-            animate(toast, sp);
+            animate(toast, sp, holdDuration);
         } else {
             StackPane wrapper = new StackPane();
             wrapper.getChildren().addAll(scene.getRoot(), toast);
             scene.setRoot(wrapper);
             SceneUtil.applySavedTheme(scene);
-            animate(toast, wrapper);
+            animate(toast, wrapper, holdDuration);
         }
     }
 
-    private static void animate(Label toast, StackPane parent) {
+    private static void animate(Label toast, StackPane parent, Duration holdDuration) {
         FadeTransition fadeIn = new FadeTransition(SLIDE_IN, toast);
         fadeIn.setToValue(1);
 
@@ -74,7 +86,7 @@ public final class ToastUtil {
 
         ParallelTransition enter = new ParallelTransition(fadeIn, slideIn);
 
-        PauseTransition hold = new PauseTransition(DISPLAY);
+        PauseTransition hold = new PauseTransition(holdDuration);
 
         FadeTransition fadeOut = new FadeTransition(SLIDE_OUT, toast);
         fadeOut.setToValue(0);

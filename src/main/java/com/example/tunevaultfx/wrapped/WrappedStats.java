@@ -17,6 +17,11 @@ public class WrappedStats {
 
     private final String summary;
 
+    /** Blend line from Find Your Genre (e.g. {@code Indie · Rock}); empty if none. */
+    private final String quizTasteBlend;
+    /** {@code Quick}, {@code Full}, or empty. */
+    private final String quizModeLabel;
+
     public WrappedStats(String topSong,
                         int topSongSeconds,
                         String topSongArtist,
@@ -26,7 +31,9 @@ public class WrappedStats {
                         String favoriteGenre,
                         int favoriteGenreSeconds,
                         int totalListeningSeconds,
-                        String summary) {
+                        String summary,
+                        String quizTasteBlend,
+                        String quizModeLabel) {
         this.topSong = topSong;
         this.topSongSeconds = topSongSeconds;
         this.topSongArtist = topSongArtist;
@@ -37,6 +44,8 @@ public class WrappedStats {
         this.favoriteGenreSeconds = favoriteGenreSeconds;
         this.totalListeningSeconds = totalListeningSeconds;
         this.summary = summary;
+        this.quizTasteBlend = quizTasteBlend == null ? "" : quizTasteBlend;
+        this.quizModeLabel = quizModeLabel == null ? "" : quizModeLabel;
     }
 
     public String getTopSong() {
@@ -79,6 +88,14 @@ public class WrappedStats {
         return summary;
     }
 
+    public String getQuizTasteBlend() {
+        return quizTasteBlend;
+    }
+
+    public String getQuizModeLabel() {
+        return quizModeLabel;
+    }
+
     public static WrappedStats empty() {
         return new WrappedStats(
                 "No listening data yet",
@@ -90,7 +107,9 @@ public class WrappedStats {
                 "No listening data yet",
                 0,
                 0,
-                "No listening data yet. Play some songs to build your Wrapped."
+                "No listening data yet. Play some songs to build your Wrapped.",
+                "",
+                ""
         );
     }
 }

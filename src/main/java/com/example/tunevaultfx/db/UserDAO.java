@@ -1,5 +1,6 @@
 package com.example.tunevaultfx.db;
 
+import com.example.tunevaultfx.profile.media.ProfileMediaStorage;
 import com.example.tunevaultfx.user.User;
 import com.example.tunevaultfx.util.PasswordUtil;
 
@@ -7,6 +8,8 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 
 public class UserDAO {
@@ -50,15 +53,15 @@ public class UserDAO {
         String sql = """
                 SELECT user_id, username, email
                 FROM app_user
-                WHERE (username = ? OR LOWER(email) = LOWER(?))
+                WHERE (LOWER(username) = LOWER(?) OR LOWER(email) = LOWER(?))
                   AND password_hash = ?
                 LIMIT 1
                 """;
 
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
-            stmt.setString(1, loginInput);
-            stmt.setString(2, loginInput);
+            stmt.setString(1, loginInput.trim());
+            stmt.setString(2, loginInput.trim());
             stmt.setString(3, PasswordUtil.hashPassword(password));
 
             try (ResultSet rs = stmt.executeQuery()) {
@@ -180,5 +183,98 @@ public class UserDAO {
             av = null;
         }
         return new User(id, username, email, null, av);
+    }
+
+    /**
+     * Usernames matching {@code query} (contains, case-insensitive). Excludes {@code excludeUsername} if set.
+     */
+    public List<String> searchUsernames(String rawQuery, int limit, String excludeUsername)
+            throws SQLException {
+        if (rawQuery == null || rawQuery.isBlank()) {
+            return List.of();
+        }
+        int lim = Math.max(1, Math.min(limit, 100));
+        String needle = rawQuery.trim().replace("%", "").replace("_", "");
+        if (needle.isBlank()) {
+            return List.of();
+        }
+        String sql =
+                """
+                SELECT username FROM app_user
+                WHERE LOWER(username) LIKE LOWER(CONCAT('%', ?, '%'))
+                """
+                        + (excludeUsername != null && !excludeUsername.isBlank()
+                                ? " AND LOWER(username) <> LOWER(?) "
+                                : "")
+                        + """
+                ORDER BY username ASC
+                LIMIT """
+                        + lim;
+
+        try (Connection conn = DBConnection.getConnection();
+                PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setString(1, needle);
+            if (excludeUsername != null && !excludeUsername.isBlank()) {
+                stmt.setString(2, excludeUsername.trim());
+            }
+            try (ResultSet rs = stmt.executeQuery()) {
+                List<String> out = new ArrayList<>();
+                while (rs.next()) {
+                    String u = rs.getString("username");
+                    if (u != null && !u.isBlank()) {
+                        out.add(u);
+                    }
+                }
+                return out;
+            }
+        }
+    }
+
+    /**
+     * Deletes the user row and dependent data after verifying the password.
+     * Removes quiz/genre-discovery row (no FK) then {@code app_user}; other tables cascade.
+     *
+     * @return {@code false} if credentials are invalid or no row was removed
+     */
+    public boolean deleteAccountVerified(String username, String password) throws SQLException {
+        if (username == null || username.isBlank() || password == null) {
+            return false;
+        }
+        User verified = authenticateUser(username.trim(), password);
+        if (verified == null) {
+            return false;
+        }
+        int userId = verified.getUserId();
+
+        try (Connection conn = DBConnection.getConnection()) {
+            conn.setAutoCommit(false);
+            try {
+                try (PreparedStatement ugd =
+                        conn.prepareStatement("DELETE FROM user_genre_discovery WHERE user_id = ?")) {
+                    ugd.setInt(1, userId);
+                    ugd.executeUpdate();
+                }
+                try (PreparedStatement del =
+                        conn.prepareStatement("DELETE FROM app_user WHERE user_id = ?")) {
+                    del.setInt(1, userId);
+                    if (del.executeUpdate() != 1) {
+                        conn.rollback();
+                        return false;
+                    }
+                }
+                conn.commit();
+            } catch (SQLException e) {
+                conn.rollback();
+                throw e;
+            } finally {
+                conn.setAutoCommit(true);
+            }
+        }
+
+        try {
+            ProfileMediaStorage.deleteUserMediaDir(userId);
+        } catch (Exception ignored) {
+        }
+        return true;
     }
 }

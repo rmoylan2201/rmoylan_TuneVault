@@ -21,6 +21,8 @@ public class UserProfile {
     private final String username;
     private final ObservableMap<String, ObservableList<Song>> playlists =
             FXCollections.observableMap(new LinkedHashMap<>());
+    /** User-pinned library playlists (order matters); max {@link PlaylistNames#MAX_USER_PINNED_PLAYLISTS}; may include Liked Songs. */
+    private final ObservableList<String> pinnedPlaylistsOrdered = FXCollections.observableArrayList();
 
     public UserProfile(String username) {
         this.username = username;
@@ -31,6 +33,10 @@ public class UserProfile {
 
     public ObservableMap<String, ObservableList<Song>> getPlaylists() {
         return playlists;
+    }
+
+    public ObservableList<String> getPinnedPlaylistsOrdered() {
+        return pinnedPlaylistsOrdered;
     }
 
     public ObservableList<Song> getLikedSongs() {

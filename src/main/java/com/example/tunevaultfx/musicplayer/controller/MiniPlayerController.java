@@ -7,6 +7,7 @@ import com.example.tunevaultfx.session.SessionManager;
 import com.example.tunevaultfx.util.AppTheme;
 import com.example.tunevaultfx.util.SceneUtil;
 import com.example.tunevaultfx.view.FxmlResources;
+import javafx.application.Platform;
 import javafx.beans.binding.Bindings;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
@@ -74,6 +75,19 @@ public class MiniPlayerController {
                 player.seek((int) miniProgressSlider.getValue()));
         miniProgressSlider.valueChangingProperty().addListener((obs, was, isChanging) -> {
             if (!isChanging) player.seek((int) miniProgressSlider.getValue());
+        });
+        // FXML initialize runs before the Slider is skinned / attached to a Scene, so .track
+        // lookup in paintSliderTrack often fails until the next 1s playback tick — repainting
+        // after the scene is ready keeps the filled track continuous across page switches.
+        miniProgressSlider.sceneProperty().addListener((obs, oldScene, newScene) -> {
+            if (newScene != null) {
+                Platform.runLater(() -> {
+                    refreshTime();
+                    if (miniProgressSlider.lookup(".track") == null) {
+                        Platform.runLater(this::refreshTime);
+                    }
+                });
+            }
         });
 
         player.currentSongProperty().addListener((obs, o, n) -> {
@@ -228,6 +242,8 @@ public class MiniPlayerController {
     }
 
     private static void paintSliderTrack(Slider slider, int current, int total) {
+        if (slider == null) return;
+        slider.applyCss();
         javafx.scene.Node track = slider.lookup(".track");
         if (track == null) return;
         double pct = (total > 0) ? (current * 100.0 / total) : 0;

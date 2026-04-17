@@ -26,7 +26,7 @@
                     <!-- Header: title + range toggle -->
                     <HBox alignment="CENTER_LEFT" spacing="16">
                         <VBox spacing="4" HBox.hgrow="ALWAYS">
-                            <Label text="Your Listening Summary" styleClass="heading-xl" />
+                            <Label text="Your listening highlights" styleClass="heading-xl" />
                             <Label fx:id="rangeTitleLabel" text="Today" styleClass="body-sm" />
                         </VBox>
                         <HBox spacing="8" alignment="CENTER">
@@ -116,6 +116,9 @@
                                 </HBox>
                                 <Label fx:id="favoriteGenreLabel" text="-" wrapText="true" maxWidth="460"
                                        styleClass="heading-lg" />
+                                <Label fx:id="genreQuizHintLabel" text="" wrapText="true" maxWidth="460"
+                                       managed="false" visible="false"
+                                       styleClass="body-sm" />
                                 <ProgressBar fx:id="genreBar" maxWidth="Infinity" prefHeight="6" />
                             </VBox>
 
@@ -139,22 +142,6 @@
 
                         </children>
                     </GridPane>
-
-                    <!-- Summary card -->
-                    <VBox fx:id="summaryCard" spacing="14" styleClass="card">
-                        <HBox spacing="10" alignment="CENTER_LEFT">
-                            <StackPane>
-                                <styleClass>
-                                    <String fx:value="icon-box-sm" />
-                                    <String fx:value="icon-box-violet" />
-                                </styleClass>
-                                <Label text="✦" style="-fx-font-size: 12px; -fx-text-fill: #c4b5fd;" />
-                            </StackPane>
-                            <Label text="Summary" styleClass="heading-md" />
-                        </HBox>
-                        <Label fx:id="summaryLabel" text="-" wrapText="true" maxWidth="1100"
-                               styleClass="body" />
-                    </VBox>
 
                 </VBox>
             </content>

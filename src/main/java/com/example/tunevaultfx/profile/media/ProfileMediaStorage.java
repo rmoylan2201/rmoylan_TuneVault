@@ -6,8 +6,10 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
+import java.util.Comparator;
 import java.util.Locale;
 import java.util.Set;
+import java.util.stream.Stream;
 
 /**
  * Stores profile avatar images on disk (per OS user), with DB holding relative keys.
@@ -76,6 +78,29 @@ public final class ProfileMediaStorage {
         Path p = resolveFile(relativeKey);
         if (p != null && Files.isRegularFile(p)) {
             Files.deleteIfExists(p);
+        }
+    }
+
+    /** Best-effort removal of all on-disk avatar files for {@code userId} (e.g. after account deletion). */
+    public static void deleteUserMediaDir(int userId) {
+        if (userId <= 0) {
+            return;
+        }
+        Path root = rootDirectory().normalize();
+        Path dir = root.resolve(String.valueOf(userId)).normalize();
+        if (!dir.startsWith(root) || !Files.isDirectory(dir)) {
+            return;
+        }
+        try (Stream<Path> walk = Files.walk(dir)) {
+            walk.sorted(Comparator.reverseOrder())
+                    .forEach(
+                            p -> {
+                                try {
+                                    Files.deleteIfExists(p);
+                                } catch (IOException ignored) {
+                                }
+                            });
+        } catch (IOException ignored) {
         }
     }
 

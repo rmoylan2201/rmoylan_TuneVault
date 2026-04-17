@@ -137,6 +137,17 @@ public class ExpandedPlayerController {
         SceneUtil.switchScene((Node) event.getSource(), FxmlResources.ARTIST_PROFILE);
     }
 
+    @FXML
+    private void handleOpenSongProfile(ActionEvent event) throws IOException {
+        Song current = player.getCurrentSong();
+        if (current == null) {
+            return;
+        }
+        player.setExpandedPlayerVisible(false);
+        SessionManager.setSelectedSong(current);
+        SceneUtil.switchScene((Node) event.getSource(), FxmlResources.SONG_PROFILE);
+    }
+
     // ── UI refresh helpers ─────────────────────────────────────────
 
     private void refreshAlbum() {

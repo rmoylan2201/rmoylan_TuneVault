@@ -50,6 +50,9 @@ public class SearchRecentItem {
         if (type == Type.SONG && song != null) {
             return song.artist() == null ? "" : song.artist();
         }
+        if (type == Type.ARTIST) {
+            return "Artist";
+        }
         return "";
     }
 

@@ -163,4 +163,16 @@ public class PlaybackLifecycleService {
             shuffleManager.createShuffleOrderStartingFrom(queue.size(), queue.getCurrentIndex());
         }
     }
+
+    /**
+     * After the user reorders upcoming tracks in the playlist tail, rebuild {@link PlaybackQueue} and
+     * shuffle order so playback matches the new list order.
+     */
+    public void resyncPlaylistQueueOrder(ObservableList<Song> ordered, int currentIndex) {
+        if (ordered == null || currentIndex < 0 || currentIndex >= ordered.size()) {
+            return;
+        }
+        queue.setQueue(ordered, currentIndex, queue.getSourcePlaylistName());
+        resetShuffleStateIfNeeded();
+    }
 }

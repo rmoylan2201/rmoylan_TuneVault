@@ -29,6 +29,7 @@ CREATE TABLE IF NOT EXISTS app_user (
 
 -- Existing databases: run once if columns are missing (ignore errors if already applied):
 -- ALTER TABLE app_user ADD COLUMN profile_avatar_key VARCHAR(512) NULL COMMENT 'Relative path under ~/.tunevaultfx/profile-media';
+-- ALTER TABLE playlist ADD COLUMN pin_order TINYINT UNSIGNED NULL COMMENT '1–3 user pins; NULL = unpinned';
 
 CREATE TABLE IF NOT EXISTS artist (
     artist_id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
@@ -57,9 +58,36 @@ CREATE TABLE IF NOT EXISTS playlist (
     user_id             INT UNSIGNED NOT NULL,
     name                VARCHAR(255) NOT NULL,
     is_system_playlist  TINYINT(1)   NOT NULL DEFAULT 0,
+    is_public           TINYINT(1)   NOT NULL DEFAULT 0 COMMENT '1 = visible on profile & search (non-system only)',
+    pin_order           TINYINT UNSIGNED NULL COMMENT '1–3 user pins; NULL = unpinned (Liked Songs stays unpinned)',
     CONSTRAINT fk_playlist_user FOREIGN KEY (user_id) REFERENCES app_user (user_id)
         ON DELETE CASCADE ON UPDATE CASCADE,
     CONSTRAINT uq_playlist_user_name UNIQUE (user_id, name)
+) ENGINE=InnoDB;
+
+-- User A follows user B (for profiles & discovery — not artist follows)
+CREATE TABLE IF NOT EXISTS user_follow (
+    follower_user_id INT UNSIGNED NOT NULL,
+    followee_user_id INT UNSIGNED NOT NULL,
+    created_at       TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (follower_user_id, followee_user_id),
+    CONSTRAINT fk_user_follow_follower FOREIGN KEY (follower_user_id) REFERENCES app_user (user_id)
+        ON DELETE CASCADE ON UPDATE CASCADE,
+    CONSTRAINT fk_user_follow_followee FOREIGN KEY (followee_user_id) REFERENCES app_user (user_id)
+        ON DELETE CASCADE ON UPDATE CASCADE,
+    INDEX idx_user_follow_followee (followee_user_id)
+) ENGINE=InnoDB;
+
+CREATE TABLE IF NOT EXISTS user_follows_artist (
+    user_id    INT UNSIGNED NOT NULL,
+    artist_id  INT UNSIGNED NOT NULL,
+    created_at TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (user_id, artist_id),
+    CONSTRAINT fk_ufa_user FOREIGN KEY (user_id) REFERENCES app_user (user_id)
+        ON DELETE CASCADE ON UPDATE CASCADE,
+    CONSTRAINT fk_ufa_artist FOREIGN KEY (artist_id) REFERENCES artist (artist_id)
+        ON DELETE CASCADE ON UPDATE CASCADE,
+    INDEX idx_ufa_artist (artist_id)
 ) ENGINE=InnoDB;
 
 CREATE TABLE IF NOT EXISTS playlist_song (

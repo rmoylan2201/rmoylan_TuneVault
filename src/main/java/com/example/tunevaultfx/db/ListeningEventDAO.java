@@ -252,4 +252,41 @@ public class ListeningEventDAO {
     }
 
     public record ListeningProfileStats(int countedPlays, long listenedSeconds) {}
+
+    /**
+     * Artist names for the user, ordered by total {@code played_seconds} on {@code PLAY} events
+     * (how much of their catalog you’ve actually listened to).
+     */
+    public List<String> findTopArtistNamesByListening(String username, int limit) throws SQLException {
+        if (username == null || username.isBlank() || limit <= 0) {
+            return List.of();
+        }
+        String sql =
+                """
+                SELECT a.name AS artist_name
+                FROM listening_event le
+                JOIN app_user u ON u.user_id = le.user_id
+                JOIN song s ON s.song_id = le.song_id
+                JOIN artist a ON a.artist_id = s.artist_id
+                WHERE u.username = ? AND le.action_type = 'PLAY'
+                GROUP BY a.artist_id, a.name
+                ORDER BY SUM(le.played_seconds) DESC, a.name ASC
+                LIMIT ?
+                """;
+        List<String> out = new ArrayList<>();
+        try (Connection conn = DBConnection.getConnection();
+                PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setString(1, username.trim());
+            stmt.setInt(2, limit);
+            try (ResultSet rs = stmt.executeQuery()) {
+                while (rs.next()) {
+                    String name = rs.getString("artist_name");
+                    if (name != null && !name.isBlank()) {
+                        out.add(name.trim());
+                    }
+                }
+            }
+        }
+        return out;
+    }
 }

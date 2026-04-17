@@ -1,17 +1,22 @@
 package com.example.tunevaultfx.wrapped;
 
 import com.example.tunevaultfx.db.DBConnection;
+import com.example.tunevaultfx.db.UserGenreDiscoveryDAO;
+import com.example.tunevaultfx.db.UserGenreDiscoverySummary;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.Optional;
 
 /**
  * Reads Wrapped analytics values from the database.
  * Daily and overall Wrapped are based on actual listened seconds.
  */
 public class WrappedStatsService {
+
+    private final UserGenreDiscoveryDAO genreDiscoveryDAO = new UserGenreDiscoveryDAO();
 
     public WrappedStats loadStatsForUsername(String username, StatsRange range) {
         if (username == null || username.isBlank()) {
@@ -35,16 +40,24 @@ public class WrappedStatsService {
                     && topArtist.seconds() == 0
                     && favoriteGenre.seconds() == 0
                     && totalSeconds == 0) {
-                return emptyForRange(range);
+                return emptyForRange(range, username);
             }
 
             String prefix = range == StatsRange.DAILY ? "Today" : "Overall";
+
+            Optional<UserGenreDiscoverySummary> quiz = loadQuizSummary(username);
+            String quizBlend = quiz.filter(s -> !s.isEmpty()).map(UserGenreDiscoverySummary::blendLine).orElse("");
+            String quizMode = quiz.filter(s -> !s.isEmpty()).map(UserGenreDiscoverySummary::quizModeLabel).orElse("");
 
             String summary = prefix
                     + " top song: " + topSong.label()
                     + ". Top artist: " + topArtist.label()
                     + ". Favorite genre: " + favoriteGenre.label()
                     + ". Total listening time: " + formatDuration(totalSeconds) + ".";
+            if (!quizBlend.isBlank()) {
+                String modeBit = quizMode.isBlank() ? "questionnaire" : quizMode + " questionnaire";
+                summary += " Taste profile (" + modeBit + "): " + quizBlend + ".";
+            }
 
             return new WrappedStats(
                     topSong.label(),
@@ -56,16 +69,29 @@ public class WrappedStatsService {
                     favoriteGenre.label(),
                     favoriteGenre.seconds(),
                     totalSeconds,
-                    summary
+                    summary,
+                    quizBlend,
+                    quizMode
             );
         } catch (SQLException e) {
             e.printStackTrace();
-            return emptyForRange(range);
+            return emptyForRange(range, username);
         }
     }
 
-    private WrappedStats emptyForRange(StatsRange range) {
+    private WrappedStats emptyForRange(StatsRange range, String username) {
+        Optional<UserGenreDiscoverySummary> quiz = loadQuizSummary(username);
+        String quizBlend = quiz.filter(s -> !s.isEmpty()).map(UserGenreDiscoverySummary::blendLine).orElse("");
+        String quizMode = quiz.filter(s -> !s.isEmpty()).map(UserGenreDiscoverySummary::quizModeLabel).orElse("");
+
         if (range == StatsRange.DAILY) {
+            String baseSummary =
+                    "No listening data for today yet. Play some songs to build today’s Wrapped.";
+            if (!quizBlend.isBlank()) {
+                String modeBit = quizMode.isBlank() ? "questionnaire" : quizMode + " questionnaire";
+                baseSummary +=
+                        " Your saved taste profile (" + modeBit + "): " + quizBlend + " — still used for recommendations.";
+            }
             return new WrappedStats(
                     "No listening data today",
                     0,
@@ -76,11 +102,47 @@ public class WrappedStatsService {
                     "No listening data today",
                     0,
                     0,
-                    "No listening data for today yet. Play some songs to build today’s Wrapped."
+                    baseSummary,
+                    quizBlend,
+                    quizMode
+            );
+        }
+
+        if (!quizBlend.isBlank()) {
+            String modeBit = quizMode.isBlank() ? "questionnaire" : quizMode + " questionnaire";
+            return new WrappedStats(
+                    "No listening data yet",
+                    0,
+                    "No listening data yet",
+                    "No listening data yet",
+                    0,
+                    "No listening data yet",
+                    "No listening data yet",
+                    0,
+                    0,
+                    "No play history yet. Your "
+                            + modeBit
+                            + " taste profile ("
+                            + quizBlend
+                            + ") still shapes recommendations, search, and autoplay.",
+                    quizBlend,
+                    quizMode
             );
         }
 
         return WrappedStats.empty();
+    }
+
+    private Optional<UserGenreDiscoverySummary> loadQuizSummary(String username) {
+        if (username == null || username.isBlank()) {
+            return Optional.empty();
+        }
+        try {
+            return genreDiscoveryDAO.loadSummary(username);
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return Optional.empty();
+        }
     }
 
     private Integer findUserIdByUsername(String username) throws SQLException {

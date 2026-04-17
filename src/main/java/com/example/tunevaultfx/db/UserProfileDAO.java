@@ -8,6 +8,7 @@ import javafx.collections.ObservableList;
 
 import java.sql.*;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -79,6 +80,9 @@ public class UserProfileDAO {
         UserProfile profile = new UserProfile(username);
         profile.getPlaylists().clear();
         profile.getPlaylists().putAll(loaded);
+        if (userId != null) {
+            profile.getPinnedPlaylistsOrdered().setAll(playlistDAO.loadPinnedPlaylistNames(userId));
+        }
         return profile;
     }
 
@@ -94,6 +98,18 @@ public class UserProfileDAO {
         return playlistDAO.deletePlaylist(username, playlistName);
     }
 
+    public boolean renamePlaylist(String username, String oldName, String newName) throws SQLException {
+        return playlistDAO.renamePlaylist(username, oldName, newName);
+    }
+
+    public void syncPlaylistPins(String username, List<String> orderedPinnedNames) throws SQLException {
+        Integer userId = playlistDAO.findUserIdByUsername(username);
+        if (userId == null) {
+            return;
+        }
+        playlistDAO.replaceUserPlaylistPins(userId, orderedPinnedNames == null ? List.of() : orderedPinnedNames);
+    }
+
     public boolean addSongToPlaylist(String username, String playlistName, Song song)
             throws SQLException {
         return playlistSongDAO.addSong(username, playlistName, song);
@@ -106,5 +122,14 @@ public class UserProfileDAO {
 
     public void toggleLike(String username, Song song) throws SQLException {
         playlistSongDAO.toggleLike(username, song);
+    }
+
+    public boolean setPlaylistPublic(String username, String playlistName, boolean isPublic)
+            throws SQLException {
+        return playlistDAO.setPlaylistPublic(username, playlistName, isPublic);
+    }
+
+    public boolean isPlaylistPublic(String username, String playlistName) throws SQLException {
+        return playlistDAO.isPlaylistPublic(username, playlistName);
     }
 }

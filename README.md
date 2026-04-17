@@ -17,6 +17,7 @@ The project is organized by responsibility so it is easier to read, maintain, an
 
 ### Documentation in this repository
 
+- **[DATABASE.md](DATABASE.md)** — MySQL database overview; canonical `schema.sql` vs optional tables.
 - **[CODEMAP.md](CODEMAP.md)** — package layout, major classes, and where to start reading the code.
 - **[CONTRIBUTING.md](CONTRIBUTING.md)** — license expectations, how to contribute if authorized, and bug-report etiquette.
 - **[SECURITY.md](SECURITY.md)** — how to report vulnerabilities privately and disclosure expectations.
