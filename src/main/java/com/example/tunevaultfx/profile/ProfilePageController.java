@@ -1,26 +1,38 @@
 package com.example.tunevaultfx.profile;
 
+import com.example.tunevaultfx.core.Song;
 import com.example.tunevaultfx.db.ListeningEventDAO;
+import com.example.tunevaultfx.db.PlaylistDAO;
 import com.example.tunevaultfx.db.UserDAO;
+import com.example.tunevaultfx.db.UserFollowDAO;
 import com.example.tunevaultfx.db.UserGenreDiscoveryDAO;
 import com.example.tunevaultfx.db.UserGenreDiscoverySummary;
+import com.example.tunevaultfx.musicplayer.controller.MusicPlayerController;
 import com.example.tunevaultfx.profile.media.ProfileAvatarCropDialog;
 import com.example.tunevaultfx.profile.media.ProfileMediaStorage;
 import com.example.tunevaultfx.session.SessionManager;
 import com.example.tunevaultfx.user.User;
 import com.example.tunevaultfx.util.AppTheme;
+import com.example.tunevaultfx.util.CellStyleKit;
 import com.example.tunevaultfx.user.UserProfile;
+import com.example.tunevaultfx.util.SceneUtil;
 import com.example.tunevaultfx.util.ToastUtil;
 import com.example.tunevaultfx.util.UiMotionUtil;
+import com.example.tunevaultfx.view.FxmlResources;
 import javafx.application.Platform;
+import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
-import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
-import javafx.scene.control.ButtonType;
 import javafx.scene.control.Label;
+import javafx.scene.control.ListCell;
+import javafx.scene.control.ListView;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
+import javafx.scene.input.MouseButton;
 import javafx.scene.layout.FlowPane;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
 import javafx.scene.shape.Circle;
 import javafx.stage.FileChooser;
@@ -35,7 +47,7 @@ import java.util.Locale;
 import java.util.Optional;
 
 /**
- * Account profile: identity, avatar, library metrics, taste, listening aggregates.
+ * Account profile: own settings, or another member's public view (search / social).
  */
 public class ProfilePageController {
 
@@ -50,43 +62,93 @@ public class ProfilePageController {
     @FXML private Label statSavedValue;
     @FXML private Label statListeningValue;
     @FXML private Label statListeningHint;
+    @FXML private Label statCaptionPlaylists;
+    @FXML private Label statCaptionSaved;
     @FXML private FlowPane genreChipsFlow;
     @FXML private Label genreSummaryLabel;
+    @FXML private VBox goToGenreQuizBlock;
     @FXML private VBox clearGenreQuizBlock;
     @FXML private Button clearGenreQuizButton;
     @FXML private Label listeningSummaryLabel;
     @FXML private Button changeAvatarButton;
     @FXML private Button removeAvatarButton;
+    @FXML private Button followUserButton;
+    @FXML private VBox socialSection;
+    @FXML private ListView<String> followingListView;
+    @FXML private ListView<String> followersListView;
+    @FXML private VBox publicPlaylistsSection;
+    @FXML private ListView<String> publicPlaylistsListView;
+    @FXML private ListView<Song> publicPlaylistSongsListView;
 
     private final UserDAO userDAO = new UserDAO();
     private final UserGenreDiscoveryDAO genreDiscoveryDAO = new UserGenreDiscoveryDAO();
     private final ListeningEventDAO listeningEventDAO = new ListeningEventDAO();
+    private final UserFollowDAO userFollowDAO = new UserFollowDAO();
+    private final PlaylistDAO playlistDAO = new PlaylistDAO();
     private final ProfileMediaPersistence mediaPersistence = new ProfileMediaPersistence(userDAO);
+    private final MusicPlayerController player = MusicPlayerController.getInstance();
+
+    private final ObservableList<String> publicPlaylistNames = FXCollections.observableArrayList();
+    private final ObservableList<Song> publicPlaylistSongs = FXCollections.observableArrayList();
 
     private String sessionUsername;
+    /** Profile being rendered (self or another user). */
+    private String subjectUsername;
+    private boolean viewingSelf;
     private User loadedUser;
 
     @FXML
     public void initialize() {
         setupAvatarClip();
 
-        sessionUsername = SessionManager.getCurrentUsername();
-        if (sessionUsername == null || sessionUsername.isBlank()) {
-            applySignedOutPlaceholder();
-            return;
+        if (publicPlaylistsListView != null) {
+            publicPlaylistsListView.setItems(publicPlaylistNames);
         }
-        if (clearGenreQuizBlock != null) {
-            clearGenreQuizBlock.setVisible(true);
-            clearGenreQuizBlock.setManaged(true);
+        if (publicPlaylistSongsListView != null) {
+            publicPlaylistSongsListView.setItems(publicPlaylistSongs);
+            setupPublicSongCells();
         }
 
-        loadIdentity(sessionUsername);
-        loadLibraryMetrics();
-        loadListeningBlock(sessionUsername);
-        loadTasteSection(sessionUsername);
+        player.currentSongProperty()
+                .addListener((o, a, b) -> Platform.runLater(this::refreshPublicPlaylistSongChrome));
+        player.playingProperty()
+                .addListener((o, a, b) -> Platform.runLater(this::refreshPublicPlaylistSongChrome));
+
+        sessionUsername = SessionManager.getCurrentUsername();
+        String view = SessionManager.getProfileViewUsername();
+        if (sessionUsername != null
+                && view != null
+                && !view.isBlank()
+                && view.trim().equalsIgnoreCase(sessionUsername.trim())) {
+            SessionManager.clearProfileViewUsername();
+            view = null;
+        }
+
+        if (sessionUsername == null || sessionUsername.isBlank()) {
+            applySignedOutPlaceholder();
+            hideCommunitySections();
+            return;
+        }
+
+        subjectUsername =
+                (view != null && !view.isBlank()) ? view.trim() : sessionUsername.trim();
+        viewingSelf = subjectUsername.equalsIgnoreCase(sessionUsername);
+
+        loadIdentity(subjectUsername, viewingSelf);
+        applyStatCaptions(viewingSelf);
+        loadStatsRow(subjectUsername, viewingSelf);
+        loadSocial(subjectUsername);
+        wireSocialNavigation();
+        loadPublicPlaylistsBrowser(subjectUsername);
+        // Listening copy only; third stat tile for others is already "Following" from loadStatsRow.
+        loadListeningBlock(subjectUsername, viewingSelf);
+        loadTasteSection(subjectUsername, viewingSelf);
+        configureFollowButton();
 
         changeAvatarButton.setOnAction(e -> pickAndApplyAvatar());
         removeAvatarButton.setOnAction(e -> clearAvatar());
+        changeAvatarButton.setDisable(!viewingSelf);
+        removeAvatarButton.setDisable(!viewingSelf);
 
         Platform.runLater(
                 () -> {
@@ -97,8 +159,24 @@ public class ProfilePageController {
                 });
     }
 
+    private void hideCommunitySections() {
+        setSectionVisible(socialSection, false);
+        setSectionVisible(publicPlaylistsSection, false);
+        if (followUserButton != null) {
+            followUserButton.setVisible(false);
+            followUserButton.setManaged(false);
+        }
+    }
+
+    private static void setSectionVisible(VBox section, boolean on) {
+        if (section != null) {
+            section.setVisible(on);
+            section.setManaged(on);
+        }
+    }
+
     private void setupAvatarClip() {
-        profileAvatarImage.setClip(new Circle(48, 48, 48));
+        profileAvatarImage.setClip(new Circle(64, 64, 64));
     }
 
     private void applySignedOutPlaceholder() {
@@ -121,13 +199,255 @@ public class ProfilePageController {
         listeningSummaryLabel.setText("Listening history is tied to your account.");
         changeAvatarButton.setDisable(true);
         removeAvatarButton.setDisable(true);
+        if (goToGenreQuizBlock != null) {
+            goToGenreQuizBlock.setVisible(false);
+            goToGenreQuizBlock.setManaged(false);
+        }
         if (clearGenreQuizBlock != null) {
             clearGenreQuizBlock.setVisible(false);
             clearGenreQuizBlock.setManaged(false);
         }
     }
 
-    private void loadIdentity(String username) {
+    private void applyStatCaptions(boolean self) {
+        if (statCaptionPlaylists != null) {
+            statCaptionPlaylists.setText(self ? "Playlists" : "Public playlists");
+        }
+        if (statCaptionSaved != null) {
+            statCaptionSaved.setText(self ? "Saved songs" : "Followers");
+        }
+        statListeningHint.setText(self ? "Counted plays" : "Following");
+    }
+
+    private void loadStatsRow(String subject, boolean self) {
+        if (self) {
+            UserProfile profile = SessionManager.getCurrentUserProfile();
+            int playlistCount =
+                    profile != null && profile.getPlaylists() != null ? profile.getPlaylists().size() : 0;
+            statPlaylistsValue.setText(String.valueOf(playlistCount));
+            statSavedValue.setText(String.valueOf(ProfileLibraryStats.countUniqueSavedSongs(profile)));
+            try {
+                Optional<ListeningEventDAO.ListeningProfileStats> opt =
+                        listeningEventDAO.loadListeningProfileStats(subject);
+                if (opt.isEmpty()) {
+                    statListeningValue.setText("0");
+                } else {
+                    statListeningValue.setText(
+                            ProfileTextFormat.formatNumber(opt.get().countedPlays()));
+                }
+            } catch (SQLException e) {
+                statListeningValue.setText("\u2014");
+            }
+            return;
+        }
+
+        try {
+            int pub = playlistDAO.listPublicPlaylistNamesForUser(subject).size();
+            statPlaylistsValue.setText(String.valueOf(pub));
+            statSavedValue.setText(String.valueOf(userFollowDAO.countFollowers(subject)));
+            statListeningValue.setText(String.valueOf(userFollowDAO.countFollowing(subject)));
+        } catch (SQLException e) {
+            e.printStackTrace();
+            statPlaylistsValue.setText("\u2014");
+            statSavedValue.setText("\u2014");
+            statListeningValue.setText("\u2014");
+        }
+    }
+
+    private void loadSocial(String subject) {
+        if (followingListView == null || followersListView == null) {
+            return;
+        }
+        try {
+            followingListView.setItems(
+                    FXCollections.observableArrayList(userFollowDAO.listFollowingUsernames(subject, 200)));
+            followersListView.setItems(
+                    FXCollections.observableArrayList(userFollowDAO.listFollowerUsernames(subject, 200)));
+        } catch (SQLException e) {
+            e.printStackTrace();
+            followingListView.setItems(FXCollections.observableArrayList());
+            followersListView.setItems(FXCollections.observableArrayList());
+        }
+    }
+
+    private void wireSocialNavigation() {
+        if (followingListView != null) {
+            followingListView.setOnMouseClicked(
+                    e -> {
+                        if (e.getButton() != MouseButton.PRIMARY || e.getClickCount() != 2) {
+                            return;
+                        }
+                        openProfileUser(followingListView.getSelectionModel().getSelectedItem());
+                    });
+        }
+        if (followersListView != null) {
+            followersListView.setOnMouseClicked(
+                    e -> {
+                        if (e.getButton() != MouseButton.PRIMARY || e.getClickCount() != 2) {
+                            return;
+                        }
+                        openProfileUser(followersListView.getSelectionModel().getSelectedItem());
+                    });
+        }
+    }
+
+    private void openProfileUser(String username) {
+        if (username == null || username.isBlank()) {
+            return;
+        }
+        SessionManager.setProfileViewUsername(username.trim());
+        try {
+            SceneUtil.switchScene(profilePageRoot, FxmlResources.PROFILE);
+        } catch (IOException ex) {
+            ex.printStackTrace();
+            ToastUtil.error(scene(), "Could not open profile.");
+        }
+    }
+
+    private void loadPublicPlaylistsBrowser(String ownerUsername) {
+        publicPlaylistSongs.clear();
+        try {
+            publicPlaylistNames.setAll(playlistDAO.listPublicPlaylistNamesForUser(ownerUsername));
+        } catch (SQLException e) {
+            e.printStackTrace();
+            publicPlaylistNames.clear();
+        }
+
+        if (publicPlaylistsListView == null) {
+            return;
+        }
+        publicPlaylistsListView
+                .getSelectionModel()
+                .selectedItemProperty()
+                .addListener(
+                        (obs, o, name) -> {
+                            publicPlaylistSongs.clear();
+                            if (name == null || name.isBlank()) {
+                                return;
+                            }
+                            try {
+                                publicPlaylistSongs.setAll(
+                                        playlistDAO.loadPublicPlaylistSongs(ownerUsername, name));
+                            } catch (SQLException ex) {
+                                ex.printStackTrace();
+                            }
+                        });
+    }
+
+    private void refreshPublicPlaylistSongChrome() {
+        if (publicPlaylistSongsListView != null) {
+            publicPlaylistSongsListView.refresh();
+        }
+    }
+
+    private void setupPublicSongCells() {
+        publicPlaylistSongsListView.setCellFactory(
+                lv ->
+                        new ListCell<>() {
+                            @Override
+                            protected void updateItem(Song song, boolean empty) {
+                                super.updateItem(song, empty);
+                                if (empty || song == null) {
+                                    setText(null);
+                                    setGraphic(null);
+                                    return;
+                                }
+                                boolean current =
+                                        player.getCurrentSong() != null
+                                                && player.getCurrentSong().songId() == song.songId();
+                                Region edgeBar = CellStyleKit.nowPlayingEdgeBar();
+                                edgeBar.setVisible(current);
+                                edgeBar.setManaged(current);
+                                VBox textBox =
+                                        CellStyleKit.songTextBoxWithKind(
+                                                song.title(), song.artist(), null, null);
+                                if (current && !textBox.getChildren().isEmpty()) {
+                                    var head = textBox.getChildren().get(0);
+                                    if (head instanceof Label lab) {
+                                        lab.setStyle(
+                                                "-fx-font-size: 14px; -fx-font-weight: bold;-fx-text-fill: "
+                                                        + CellStyleKit.getAccentTitle()
+                                                        + ";");
+                                    }
+                                }
+                                HBox row =
+                                        CellStyleKit.row(
+                                                edgeBar,
+                                                CellStyleKit.iconBox(
+                                                        "\u266A",
+                                                        CellStyleKit.Palette.PURPLE,
+                                                        false),
+                                                textBox);
+                                CellStyleKit.markPlaying(row, current);
+                                setText(null);
+                                setGraphic(row);
+                                setOnMouseClicked(
+                                        ev -> {
+                                            if (ev.getButton() == MouseButton.PRIMARY
+                                                    && ev.getClickCount() == 2) {
+                                                int i = publicPlaylistSongs.indexOf(song);
+                                                player.playQueue(
+                                                        publicPlaylistSongs,
+                                                        Math.max(0, i),
+                                                        selectedPublicPlaylistTitle());
+                                                ev.consume();
+                                            }
+                                        });
+                            }
+                        });
+    }
+
+    private String selectedPublicPlaylistTitle() {
+        if (publicPlaylistsListView == null) {
+            return "Public playlist";
+        }
+        String n = publicPlaylistsListView.getSelectionModel().getSelectedItem();
+        return n != null ? n : "Public playlist";
+    }
+
+    private void configureFollowButton() {
+        if (followUserButton == null) {
+            return;
+        }
+        if (viewingSelf) {
+            followUserButton.setVisible(false);
+            followUserButton.setManaged(false);
+            return;
+        }
+        followUserButton.setVisible(true);
+        followUserButton.setManaged(true);
+        refreshFollowButtonLabel();
+        followUserButton.setOnAction(
+                e -> {
+                    try {
+                        if (userFollowDAO.isFollowing(sessionUsername, subjectUsername)) {
+                            userFollowDAO.unfollow(sessionUsername, subjectUsername);
+                        } else {
+                            userFollowDAO.follow(sessionUsername, subjectUsername);
+                        }
+                        refreshFollowButtonLabel();
+                        loadSocial(subjectUsername);
+                        loadStatsRow(subjectUsername, false);
+                    } catch (SQLException ex) {
+                        ex.printStackTrace();
+                        ToastUtil.error(scene(), "Could not update follow state.");
+                    }
+                });
+    }
+
+    private void refreshFollowButtonLabel() {
+        if (followUserButton == null || viewingSelf) {
+            return;
+        }
+        try {
+            boolean f = userFollowDAO.isFollowing(sessionUsername, subjectUsername);
+            followUserButton.setText(f ? "Following" : "Follow");
+        } catch (SQLException e) {
+            followUserButton.setText("Follow");
+        }
+    }
+
+    private void loadIdentity(String username, boolean self) {
         profileDisplayName.setText(username);
         profileHandleLabel.setText("@" + username.replaceAll("\\s+", "").toLowerCase(Locale.ROOT));
         profileAvatarInitial.setText(ProfileTextFormat.initialsFor(username));
@@ -137,19 +457,28 @@ public class ProfilePageController {
             if (row.isPresent()) {
                 loadedUser = row.get();
                 User u = loadedUser;
-                profileEmailLabel.setText(u.getEmail() != null ? u.getEmail() : "\u2014");
-                profileAccountIdLabel.setText(
-                        "Account ID \u00B7 " + u.getUserId() + "  \u00B7  Sign-in email is not public.");
+                if (self) {
+                    profileEmailLabel.setText(u.getEmail() != null ? u.getEmail() : "\u2014");
+                    profileAccountIdLabel.setText(
+                            "Account ID \u00B7 " + u.getUserId() + "  \u00B7  Sign-in email is not public.");
+                } else {
+                    profileEmailLabel.setText("TuneVault member");
+                    profileAccountIdLabel.setText("");
+                }
                 applyAvatarImage(u.getProfileAvatarKey());
-                changeAvatarButton.setDisable(false);
-                removeAvatarButton.setDisable(u.getProfileAvatarKey() == null || u.getProfileAvatarKey().isBlank());
+                changeAvatarButton.setVisible(self);
+                changeAvatarButton.setManaged(self);
+                removeAvatarButton.setVisible(self);
+                removeAvatarButton.setManaged(self);
             } else {
                 loadedUser = null;
-                profileEmailLabel.setText("\u2014");
+                profileEmailLabel.setText(self ? "\u2014" : "Unknown member");
                 profileAccountIdLabel.setText("");
                 applyAvatarImage(null);
-                changeAvatarButton.setDisable(true);
-                removeAvatarButton.setDisable(true);
+                changeAvatarButton.setVisible(self);
+                changeAvatarButton.setManaged(self);
+                removeAvatarButton.setVisible(self);
+                removeAvatarButton.setManaged(self);
             }
         } catch (SQLException e) {
             e.printStackTrace();
@@ -157,8 +486,6 @@ public class ProfilePageController {
             profileEmailLabel.setText("Could not load account (database may need migration).");
             profileAccountIdLabel.setText("");
             applyAvatarImage(null);
-            changeAvatarButton.setDisable(true);
-            removeAvatarButton.setDisable(true);
         }
     }
 
@@ -177,7 +504,7 @@ public class ProfilePageController {
     }
 
     private void pickAndApplyAvatar() {
-        if (loadedUser == null) {
+        if (!viewingSelf || loadedUser == null) {
             return;
         }
         File f = showOpenDialog("Choose profile photo");
@@ -210,7 +537,7 @@ public class ProfilePageController {
     }
 
     private void clearAvatar() {
-        if (loadedUser == null) {
+        if (!viewingSelf || loadedUser == null) {
             return;
         }
         try {
@@ -226,10 +553,11 @@ public class ProfilePageController {
     private void reloadUserAndRefreshAvatar() throws SQLException {
         Optional<User> row = userDAO.findByUsername(sessionUsername);
         loadedUser = row.orElse(null);
-        if (loadedUser != null) {
+        if (loadedUser != null && viewingSelf) {
             applyAvatarImage(loadedUser.getProfileAvatarKey());
             removeAvatarButton.setDisable(
-                    loadedUser.getProfileAvatarKey() == null || loadedUser.getProfileAvatarKey().isBlank());
+                    loadedUser.getProfileAvatarKey() == null
+                            || loadedUser.getProfileAvatarKey().isBlank());
         }
     }
 
@@ -252,15 +580,12 @@ public class ProfilePageController {
         return profilePageRoot != null ? profilePageRoot.getScene() : null;
     }
 
-    private void loadLibraryMetrics() {
-        UserProfile profile = SessionManager.getCurrentUserProfile();
-        int playlistCount =
-                profile != null && profile.getPlaylists() != null ? profile.getPlaylists().size() : 0;
-        statPlaylistsValue.setText(String.valueOf(playlistCount));
-        statSavedValue.setText(String.valueOf(ProfileLibraryStats.countUniqueSavedSongs(profile)));
-    }
-
-    private void loadListeningBlock(String username) {
+    private void loadListeningBlock(String username, boolean self) {
+        if (!self) {
+            listeningSummaryLabel.setText(
+                    "Listening activity stays private. Only this member sees their own play counts.");
+            return;
+        }
         try {
             Optional<ListeningEventDAO.ListeningProfileStats> opt =
                     listeningEventDAO.loadListeningProfileStats(username);
@@ -288,33 +613,39 @@ public class ProfilePageController {
         }
     }
 
-    private void loadTasteSection(String username) {
+    private void loadTasteSection(String username, boolean self) {
         genreChipsFlow.getChildren().clear();
+        boolean showTakeGenreQuiz = false;
         try {
             Optional<UserGenreDiscoverySummary> opt = genreDiscoveryDAO.loadSummary(username);
             if (opt.isEmpty()) {
+                showTakeGenreQuiz = true;
                 Label chip = new Label("Not set");
                 chip.getStyleClass().add("profile-genre-chip-muted");
                 genreChipsFlow.getChildren().add(chip);
                 genreSummaryLabel.setText(
-                        "You haven\u2019t saved a genre profile yet. Open Find Your Genre in the sidebar when you "
-                                + "want recommendations and search to lean into a style.");
-                return;
+                        self
+                                ? "You haven\u2019t saved a genre profile yet. Take the quiz below when you want "
+                                        + "recommendations and search to lean into a style."
+                                : "This member hasn\u2019t shared a genre quiz profile.");
+            } else {
+                UserGenreDiscoverySummary s = opt.get();
+                for (String part : s.blendParts()) {
+                    Label chip = new Label(part);
+                    chip.getStyleClass().add("profile-genre-chip");
+                    genreChipsFlow.getChildren().add(chip);
+                }
+                String mode = s.quizModeLabel();
+                String modePhrase =
+                        mode.isEmpty()
+                                ? "Saved from Find Your Genre."
+                                : "Saved from a " + mode + " quiz.";
+                genreSummaryLabel.setText(
+                        self
+                                ? modePhrase
+                                        + " Retake Find Your Genre from the top bar anytime; your library and history stay as they are."
+                                : modePhrase + " Used for their recommendations when they\u2019re signed in.");
             }
-            UserGenreDiscoverySummary s = opt.get();
-            for (String part : s.blendParts()) {
-                Label chip = new Label(part);
-                chip.getStyleClass().add("profile-genre-chip");
-                genreChipsFlow.getChildren().add(chip);
-            }
-            String mode = s.quizModeLabel();
-            String modePhrase =
-                    mode.isEmpty()
-                            ? "Last saved from Find Your Genre."
-                            : "Last saved from your " + mode + " quiz.";
-            genreSummaryLabel.setText(
-                    modePhrase
-                            + " Retake Find Your Genre from the sidebar anytime; your library and history stay as they are.");
         } catch (SQLException e) {
             e.printStackTrace();
             genreChipsFlow.getChildren().clear();
@@ -323,7 +654,43 @@ public class ProfilePageController {
             genreChipsFlow.getChildren().add(err);
             genreSummaryLabel.setText(ProfileGenreMessages.loadFailureHint(e));
         } finally {
-            updateClearGenreQuizButton(username);
+            boolean hasSavedProfile = false;
+            try {
+                hasSavedProfile =
+                        username != null
+                                && !username.isBlank()
+                                && genreDiscoveryDAO.hasSavedProfile(username);
+            } catch (SQLException ignored) {
+                // leave false
+            }
+            boolean showQuizUi = self && showTakeGenreQuiz;
+            boolean showClear = self && hasSavedProfile;
+            if (goToGenreQuizBlock != null) {
+                goToGenreQuizBlock.setVisible(showQuizUi);
+                goToGenreQuizBlock.setManaged(showQuizUi);
+            }
+            if (clearGenreQuizBlock != null) {
+                clearGenreQuizBlock.setVisible(showClear);
+                clearGenreQuizBlock.setManaged(showClear);
+            }
+            if (self) {
+                updateClearGenreQuizButton(sessionUsername);
+            } else if (clearGenreQuizButton != null) {
+                clearGenreQuizButton.setDisable(true);
+            }
+        }
+    }
+
+    @FXML
+    private void handleGoToGenreQuiz() {
+        if (profilePageRoot == null || !viewingSelf) {
+            return;
+        }
+        try {
+            SceneUtil.switchScene(profilePageRoot, FxmlResources.FIND_YOUR_GENRE);
+        } catch (IOException ex) {
+            ex.printStackTrace();
+            ToastUtil.error(scene(), "Could not open Find Your Genre.");
         }
     }
 
@@ -332,43 +699,40 @@ public class ProfilePageController {
         if (sessionUsername == null || sessionUsername.isBlank()) {
             return;
         }
-        Alert confirm = new Alert(Alert.AlertType.CONFIRMATION);
-        confirm.setTitle("Clear genre quiz?");
-        confirm.setHeaderText("Remove Find Your Genre from recommendations?");
-        confirm.setContentText(
-                "This deletes only your saved quiz blend in the database. Listening history, playlists, "
-                        + "and play counts are not changed. You can retake the quiz anytime.");
-        Optional<ButtonType> choice = confirm.showAndWait();
-        if (choice.isEmpty() || choice.get() != ButtonType.OK) {
-            return;
-        }
-        try {
-            boolean removed = genreDiscoveryDAO.deleteForUser(sessionUsername);
-            if (!removed) {
-                ToastUtil.info(scene(), "No saved genre quiz to clear.");
-            } else {
-                ToastUtil.success(scene(), "Genre quiz cleared. Recommendations now use your listening only.");
-            }
-            loadTasteSection(sessionUsername);
-            if (profilePageRoot != null) {
-                AppTheme.refreshAllListViews(profilePageRoot);
-            }
-        } catch (SQLException e) {
-            e.printStackTrace();
-            ToastUtil.error(scene(), "Could not clear genre quiz. Check your database connection.");
-        }
+        ProfileGenreClearConfirmOverlay.show(
+                scene(),
+                () -> {
+                    try {
+                        boolean removed = genreDiscoveryDAO.deleteForUser(sessionUsername);
+                        if (!removed) {
+                            ToastUtil.info(scene(), "No saved genre quiz to clear.");
+                        } else {
+                            ToastUtil.success(
+                                    scene(),
+                                    "Genre quiz cleared. Recommendations now use your listening only.");
+                        }
+                        loadTasteSection(sessionUsername, true);
+                        if (profilePageRoot != null) {
+                            AppTheme.refreshAllListViews(profilePageRoot);
+                        }
+                    } catch (SQLException e) {
+                        e.printStackTrace();
+                        ToastUtil.error(
+                                scene(), "Could not clear genre quiz. Check your database connection.");
+                    }
+                });
     }
 
-    private void updateClearGenreQuizButton(String username) {
+    private void updateClearGenreQuizButton(String accountUsername) {
         if (clearGenreQuizButton == null) {
             return;
         }
-        if (username == null || username.isBlank()) {
+        if (accountUsername == null || accountUsername.isBlank()) {
             clearGenreQuizButton.setDisable(true);
             return;
         }
         try {
-            clearGenreQuizButton.setDisable(!genreDiscoveryDAO.hasSavedProfile(username));
+            clearGenreQuizButton.setDisable(!genreDiscoveryDAO.hasSavedProfile(accountUsername));
         } catch (SQLException e) {
             clearGenreQuizButton.setDisable(true);
         }

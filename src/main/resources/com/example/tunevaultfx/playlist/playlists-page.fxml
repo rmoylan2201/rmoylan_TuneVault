@@ -17,56 +17,27 @@
     <left>
         <fx:include source="../chrome/app-sidebar.fxml"/>
     </left>
-    <!-- ── CENTER: Scrollable two-column layout ──── -->
+    <!-- ── CENTER: scrollable playlist body ──── -->
     <center>
         <StackPane alignment="TOP_LEFT"
                    style="-fx-padding: 16 32 16 32;"
                    maxWidth="Infinity" maxHeight="Infinity">
 
-            <!-- Sidebar stays in the viewport; only the playlist detail column scrolls -->
-            <HBox fx:id="contentRow" spacing="20" alignment="TOP_LEFT"
-                  fillHeight="true" maxWidth="Infinity" maxHeight="Infinity"
-                  style="-fx-padding: 0 0 24 0;">
-
-                <VBox fx:id="playlistSidebarCard" spacing="12"
-                      minWidth="280" prefWidth="280" maxWidth="280"
-                      minHeight="0" maxHeight="Infinity"
-                      HBox.hgrow="NEVER"
-                      styleClass="card">
-
-                    <HBox alignment="CENTER_LEFT" spacing="8">
-                        <Label text="Your Playlists" styleClass="heading-md"/>
-                    </HBox>
-
-                    <ListView fx:id="playlistListView"
-                              VBox.vgrow="ALWAYS"
-                              minHeight="120"/>
-
-                    <VBox spacing="8" style="-fx-padding: 4 0 0 0;">
-                        <Button text="+ New Playlist"
-                                onAction="#handleCreatePlaylist"
-                                maxWidth="Infinity"
-                                styleClass="btn-primary"/>
-
-                        <Button fx:id="deletePlaylistButton"
-                                text="Delete Playlist"
-                                onAction="#handleDeletePlaylist"
-                                maxWidth="Infinity"
-                                styleClass="btn-danger"/>
-                    </VBox>
-                </VBox>
-
-                <ScrollPane fitToWidth="true" fitToHeight="false"
-                            hbarPolicy="NEVER"
-                            vbarPolicy="AS_NEEDED"
-                            HBox.hgrow="ALWAYS"
-                            minWidth="0" minHeight="0" maxHeight="Infinity">
+            <ScrollPane fx:id="contentRow"
+                        fitToWidth="true" fitToHeight="false"
+                        hbarPolicy="NEVER"
+                        vbarPolicy="AS_NEEDED"
+                        maxWidth="Infinity" maxHeight="Infinity"
+                        minWidth="0" minHeight="0"
+                        style="-fx-padding: 0 0 24 0;">
                     <content>
                         <VBox spacing="0" minHeight="0">
 
                             <VBox fx:id="playlistSongsCard" spacing="12" styleClass="card">
 
-                                <HBox alignment="CENTER_LEFT" spacing="14">
+                                <HBox alignment="CENTER_LEFT" spacing="16">
+                                    <StackPane fx:id="selectedPlaylistCover"
+                                               styleClass="playlist-page-cover-host"/>
                                     <VBox spacing="4" HBox.hgrow="ALWAYS">
                                         <Label fx:id="selectedPlaylistLabel"
                                                text="No playlist selected"
@@ -113,8 +84,7 @@
 
                         </VBox>
                     </content>
-                </ScrollPane>
-            </HBox>
+            </ScrollPane>
 
             <!-- Floating search panel (top-right overlay) -->
             <VBox fx:id="searchSongsPanel"

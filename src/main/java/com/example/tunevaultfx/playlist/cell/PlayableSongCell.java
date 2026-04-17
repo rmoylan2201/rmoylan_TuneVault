@@ -98,6 +98,20 @@ public class PlayableSongCell extends ListCell<Song> {
         return PLAY_PLAYING_DARK;
     }
 
+    /** Current track row while playback is paused — still “live”, but shows ▶ to resume. */
+    private static String playPausedOnCurrentRowStyle() {
+        if (AppTheme.isLightMode()) {
+            return "-fx-background-color: rgba(124,58,237,0.22);"
+                    + "-fx-text-fill: #5b21b6;"
+                    + "-fx-font-size: 14px; -fx-font-weight: bold;"
+                    + "-fx-background-radius: 17;";
+        }
+        return "-fx-background-color: rgba(139,92,246,0.14);"
+                + "-fx-text-fill: #ddd6fe;"
+                + "-fx-font-size: 14px; -fx-font-weight: bold;"
+                + "-fx-background-radius: 17;";
+    }
+
     private static String moreDefaultStyle() {
         if (AppTheme.isLightMode()) {
             return "-fx-background-color: transparent;"
@@ -184,18 +198,28 @@ public class PlayableSongCell extends ListCell<Song> {
         // Row hover
         row.setOnMouseEntered(e -> {
             Song s = getItem();
-            boolean isPlaying = isCurrentTrackInThisPlaylist(s);
-                       if (!isPlaying) {
+            boolean isCurrent = isCurrentSongRow(s);
+            if (!isCurrent) {
                 row.setStyle(CellStyleKit.getRowHover());
                 playButton.setStyle(playHoverStyle());
+            } else if (player.isPlaying()) {
+                playButton.setStyle(playPlayingStyle());
+            } else {
+                playButton.setStyle(playPausedOnCurrentRowStyle());
             }
             moreButton.setStyle(moreHoverStyle());
         });
         row.setOnMouseExited(e -> {
             Song s = getItem();
-            boolean isPlaying = isCurrentTrackInThisPlaylist(s);
-            row.setStyle(isPlaying ? CellStyleKit.getRowPlaying() : CellStyleKit.getRowDefault());
-            playButton.setStyle(isPlaying ? playPlayingStyle() : playDefaultStyle());
+            boolean isCurrent = isCurrentSongRow(s);
+            row.setStyle(isCurrent ? CellStyleKit.getRowPlaying() : CellStyleKit.getRowDefault());
+            if (!isCurrent) {
+                playButton.setStyle(playDefaultStyle());
+            } else if (player.isPlaying()) {
+                playButton.setStyle(playPlayingStyle());
+            } else {
+                playButton.setStyle(playPausedOnCurrentRowStyle());
+            }
             moreButton.setStyle(moreDefaultStyle());
         });
 
@@ -257,11 +281,12 @@ public class PlayableSongCell extends ListCell<Song> {
             return;
         }
 
-        boolean isPlaying = isCurrentTrackInThisPlaylist(song);
+        boolean isCurrent = isCurrentSongRow(song);
+        boolean audioPlaying = isCurrent && player.isPlaying();
 
         titleLabel.setText(song.title());
         titleLabel.setStyle("-fx-font-size: 14px; -fx-font-weight: bold; -fx-text-fill: "
-                + (isPlaying ? CellStyleKit.getAccentTitle() : CellStyleKit.getTextPrimary()) + ";");
+                + (isCurrent ? CellStyleKit.getAccentTitle() : CellStyleKit.getTextPrimary()) + ";");
         while (textBox.getChildren().size() > 1) {
             textBox.getChildren().remove(1);
         }
@@ -271,12 +296,18 @@ public class PlayableSongCell extends ListCell<Song> {
             textBox.getChildren().add(meta);
         }
 
-        nowPlayingBar.setVisible(isPlaying);
-        nowPlayingBar.setManaged(isPlaying);
-        playButton.setText(isPlaying ? "⏸" : "▶");
-        playButton.setStyle(isPlaying ? playPlayingStyle() : playDefaultStyle());
-        row.setStyle(isPlaying ? CellStyleKit.getRowPlaying() : CellStyleKit.getRowDefault());
-        CellStyleKit.markPlaying(row, isPlaying);
+        nowPlayingBar.setVisible(isCurrent);
+        nowPlayingBar.setManaged(isCurrent);
+        playButton.setText(audioPlaying ? "⏸" : "▶");
+        if (!isCurrent) {
+            playButton.setStyle(playDefaultStyle());
+        } else if (audioPlaying) {
+            playButton.setStyle(playPlayingStyle());
+        } else {
+            playButton.setStyle(playPausedOnCurrentRowStyle());
+        }
+        row.setStyle(isCurrent ? CellStyleKit.getRowPlaying() : CellStyleKit.getRowDefault());
+        CellStyleKit.markPlaying(row, isCurrent);
 
         setText(null); setGraphic(row);
         setBackground(Background.EMPTY);
@@ -332,22 +363,11 @@ public class PlayableSongCell extends ListCell<Song> {
         }
     }
 
-    private boolean isCurrentTrackInThisPlaylist(Song song) {
+    /** True when this row's song is the global current track (any source). */
+    private boolean isCurrentSongRow(Song song) {
         if (song == null || player.getCurrentSong() == null) {
             return false;
         }
-
-        String currentSourcePlaylist = player.getCurrentSourcePlaylistName();
-        String thisPlaylist = playlistNameSupplier == null ? "" : playlistNameSupplier.get();
-        if (currentSourcePlaylist == null) {
-            currentSourcePlaylist = "";
-        }
-        if (thisPlaylist == null) {
-            thisPlaylist = "";
-        }
-
-        return !currentSourcePlaylist.isBlank()
-                && currentSourcePlaylist.equals(thisPlaylist)
-                && player.getCurrentSong().songId() == song.songId();
+        return player.getCurrentSong().songId() == song.songId();
     }
 }

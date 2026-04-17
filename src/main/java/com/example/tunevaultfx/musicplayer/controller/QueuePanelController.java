@@ -2,6 +2,7 @@ package com.example.tunevaultfx.musicplayer.controller;
 
 import com.example.tunevaultfx.core.Song;
 import com.example.tunevaultfx.session.SessionManager;
+import com.example.tunevaultfx.util.AppTheme;
 import com.example.tunevaultfx.util.CellStyleKit;
 import com.example.tunevaultfx.util.SceneUtil;
 import com.example.tunevaultfx.view.FxmlResources;
@@ -16,6 +17,7 @@ import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
+import javafx.scene.Node;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.ListCell;
@@ -27,13 +29,18 @@ import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.input.MouseButton;
 import javafx.scene.input.TransferMode;
+import javafx.scene.image.Image;
+import javafx.scene.image.WritableImage;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
+import javafx.scene.layout.Region;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.util.Duration;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 
 public class QueuePanelController {
 
@@ -60,6 +67,15 @@ public class QueuePanelController {
 
     private static final DataFormat DRAG_INDEX = new DataFormat("application/x-queue-drag-index");
 
+    /** Invisible drag image so the OS does not show a file/document cursor ghost. */
+    private static final Image QUEUE_DRAG_GHOST = createQueueDragGhost();
+
+    private static Image createQueueDragGhost() {
+        WritableImage img = new WritableImage(1, 1);
+        img.getPixelWriter().setArgb(0, 0, 0x00000000);
+        return img;
+    }
+
     @FXML
     public void initialize() {
         queueOverlayRoot.setVisible(false);
@@ -72,7 +88,7 @@ public class QueuePanelController {
         queueListView.setPlaceholder(new Label("Nothing queued yet") {{
             setStyle("-fx-text-fill: #5c5c78; -fx-font-size: 13px;");
         }});
-        queueListView.setFixedCellSize(58);
+        queueListView.setFixedCellSize(-1);
 
         player.currentSongProperty().addListener((obs, o, n) -> refreshAll());
         player.playingProperty().addListener((obs, o, n) -> refreshNowPlaying());
@@ -132,12 +148,18 @@ public class QueuePanelController {
     private void rebuildDisplayQueue() {
         ObservableList<Song> upcoming = player.getUpcomingQueueSnapshot();
         int userQueueSize = player.getUserQueueSize();
+        int playlistUpcoming = player.getPlaylistUpcomingCount();
 
         displayQueue.clear();
         for (int i = 0; i < upcoming.size(); i++) {
             Song s = upcoming.get(i);
-            boolean isUserQueued = i < userQueueSize;
-            displayQueue.add(new QueueEntry(s, i, isUserQueued));
+            QueueSeg seg =
+                    i < userQueueSize
+                            ? QueueSeg.USER
+                            : (i < userQueueSize + playlistUpcoming
+                                    ? QueueSeg.PLAYLIST
+                                    : QueueSeg.AUTOPLAY);
+            displayQueue.add(new QueueEntry(s, i, seg));
         }
 
         int total = displayQueue.size();
@@ -155,6 +177,10 @@ public class QueuePanelController {
         queueCountLabel.setText(total == 0
                 ? "Queue"
                 : "Queue \u00B7 " + total + " song" + (total == 1 ? "" : "s"));
+    }
+
+    private static String queueSectionDividerColor() {
+        return AppTheme.isLightMode() ? "rgba(15,23,42,0.14)" : "rgba(238,238,246,0.12)";
     }
 
     // ── Animation ──────────────────────────────────────────────
@@ -203,20 +229,56 @@ public class QueuePanelController {
 
     // ── Data model ─────────────────────────────────────────────
 
-    record QueueEntry(Song song, int upcomingIndex, boolean userQueued) {}
+    private enum QueueSeg {
+        USER,
+        PLAYLIST,
+        AUTOPLAY
+    }
+
+    record QueueEntry(Song song, int upcomingIndex, QueueSeg seg) {
+        boolean userQueued() {
+            return seg == QueueSeg.USER;
+        }
+    }
 
     // ── Cell ───────────────────────────────────────────────────
 
     private class UnifiedQueueCell extends ListCell<QueueEntry> {
 
+        private final Region queueDropTopLine = new Region();
+        private final Region queueDropBottomLine = new Region();
+        private final VBox queueRowBox = new VBox(0);
+        private boolean dropInsertAbove;
+
         UnifiedQueueCell() {
+            String lineStyle =
+                    "-fx-background-color: #a78bfa; -fx-min-height: 3; -fx-max-height: 3; -fx-pref-height: 3;";
+            queueDropTopLine.setStyle(lineStyle);
+            queueDropBottomLine.setStyle(lineStyle);
+            hideDropInsert();
             setupDragAndDrop();
+        }
+
+        private void showDropInsert(boolean above) {
+            dropInsertAbove = above;
+            queueDropTopLine.setManaged(above);
+            queueDropTopLine.setVisible(above);
+            queueDropBottomLine.setManaged(!above);
+            queueDropBottomLine.setVisible(!above);
+        }
+
+        private void hideDropInsert() {
+            queueDropTopLine.setManaged(false);
+            queueDropTopLine.setVisible(false);
+            queueDropBottomLine.setManaged(false);
+            queueDropBottomLine.setVisible(false);
         }
 
         @Override
         protected void updateItem(QueueEntry entry, boolean empty) {
             super.updateItem(entry, empty);
             if (empty || entry == null) {
+                hideDropInsert();
                 setGraphic(null);
                 setText(null);
                 setStyle("-fx-background-color: transparent;");
@@ -276,7 +338,10 @@ public class QueuePanelController {
                 });
                 removeBtn.setOnMouseEntered(e -> removeBtn.setStyle(REMOVE_HOVER));
                 removeBtn.setOnMouseExited(e -> removeBtn.setStyle(REMOVE_DEFAULT));
+                row.getChildren().add(removeBtn);
+            }
 
+            if (rowReorderable(entry.seg())) {
                 Label dragHandle = new Label("\u2261");
                 dragHandle.setMinWidth(20);
                 dragHandle.setAlignment(Pos.CENTER);
@@ -292,8 +357,7 @@ public class QueuePanelController {
                                 "-fx-text-fill: "
                                         + CellStyleKit.getTextMuted()
                                         + "; -fx-font-size: 18px; -fx-cursor: move;"));
-
-                row.getChildren().addAll(removeBtn, dragHandle);
+                row.getChildren().add(dragHandle);
             }
 
             row.setOnMouseClicked(e -> {
@@ -307,67 +371,137 @@ public class QueuePanelController {
             row.setOnMouseEntered(e -> row.setStyle(CellStyleKit.getRowHover() + " -fx-cursor: hand;"));
             row.setOnMouseExited(e -> row.setStyle(CellStyleKit.getRowDefault() + " -fx-cursor: hand;"));
 
-            setGraphic(row);
+            boolean isNextUpRow = entry.upcomingIndex() == 0;
+            boolean restDivider =
+                    entry.upcomingIndex() == 1 && displayQueue.size() > 1;
+
+            List<Node> stack = new ArrayList<>();
+            if (isNextUpRow) {
+                Label nextHeader = new Label("Next up");
+                nextHeader.setPadding(new Insets(2, 10, 2, 10));
+                nextHeader.setMaxWidth(Double.MAX_VALUE);
+                nextHeader.setStyle(
+                        "-fx-text-fill: "
+                                + CellStyleKit.getAccentTitle()
+                                + "; -fx-font-size: 11px; -fx-font-weight: bold;");
+                stack.add(nextHeader);
+            }
+            if (restDivider) {
+                Region gap = new Region();
+                gap.setMinHeight(8);
+                gap.setPrefHeight(8);
+                gap.setMaxHeight(8);
+                Region line = new Region();
+                line.setMinHeight(1);
+                line.setPrefHeight(1);
+                line.setMaxHeight(1);
+                line.setStyle("-fx-background-color: " + queueSectionDividerColor() + ";");
+                VBox sep = new VBox(0, gap, line);
+                sep.setFillWidth(true);
+                stack.add(sep);
+            }
+            stack.add(queueDropTopLine);
+            stack.add(row);
+            stack.add(queueDropBottomLine);
+            queueRowBox.getChildren().setAll(stack);
+            setGraphic(queueRowBox);
             setText(null);
             setStyle("-fx-background-color: transparent; -fx-padding: 1 0 1 0;");
+        }
+
+        private boolean rowReorderable(QueueSeg seg) {
+            int uq = player.getUserQueueSize();
+            int pl = player.getPlaylistUpcomingCount();
+            int ap = player.getAutoplayUpcomingCount();
+            return switch (seg) {
+                case USER -> uq > 1;
+                case PLAYLIST -> pl > 1;
+                case AUTOPLAY -> ap > 1;
+            };
         }
 
         private void setupDragAndDrop() {
             setOnDragDetected(event -> {
                 QueueEntry entry = getItem();
-                if (entry == null || !entry.userQueued()) return;
+                if (entry == null || !rowReorderable(entry.seg())) {
+                    return;
+                }
                 Dragboard db = startDragAndDrop(TransferMode.MOVE);
+                db.setDragView(QUEUE_DRAG_GHOST, 0, 0);
                 ClipboardContent cc = new ClipboardContent();
                 cc.put(DRAG_INDEX, entry.upcomingIndex());
                 db.setContent(cc);
-                setStyle("-fx-background-color: rgba(139,92,246,0.10); -fx-padding: 1 0 1 0;");
                 event.consume();
             });
 
             setOnDragOver(event -> {
-                if (event.getGestureSource() != this && event.getDragboard().hasContent(DRAG_INDEX)) {
+                if (event.getDragboard().hasContent(DRAG_INDEX)) {
                     QueueEntry target = getItem();
-                    if (target != null && target.userQueued()) {
+                    int fromIdx = (int) event.getDragboard().getContent(DRAG_INDEX);
+                    if (target != null
+                            && rowReorderable(target.seg())
+                            && player.isSameUpcomingSegment(fromIdx, target.upcomingIndex())) {
                         event.acceptTransferModes(TransferMode.MOVE);
+                        double fallback = queueListView.getFixedCellSize();
+                        if (fallback <= 0) {
+                            fallback = Math.max(56, prefHeight(-1));
+                        }
+                        double h = getHeight() > 0 ? getHeight() : fallback;
+                        showDropInsert(event.getY() < h / 2);
+                    } else {
+                        hideDropInsert();
                     }
                 }
                 event.consume();
             });
 
-            setOnDragEntered(event -> {
-                if (event.getGestureSource() != this && event.getDragboard().hasContent(DRAG_INDEX)) {
-                    QueueEntry target = getItem();
-                    if (target != null && target.userQueued()) {
-                        setStyle("-fx-background-color: rgba(139,92,246,0.14); -fx-padding: 1 0 1 0;");
-                    }
-                }
-            });
-
-            setOnDragExited(event ->
-                    setStyle("-fx-background-color: transparent; -fx-padding: 1 0 1 0;"));
+            setOnDragExited(event -> hideDropInsert());
 
             setOnDragDropped(event -> {
                 Dragboard db = event.getDragboard();
                 if (db.hasContent(DRAG_INDEX)) {
                     int fromIdx = (int) db.getContent(DRAG_INDEX);
                     QueueEntry target = getItem();
-                    if (target != null && target.userQueued()) {
-                        int toIdx = target.upcomingIndex();
-                        if (fromIdx != toIdx) {
-                            player.moveInQueue(fromIdx, toIdx);
-                        }
+                    if (target != null
+                            && player.isSameUpcomingSegment(fromIdx, target.upcomingIndex())) {
+                        int insertBefore =
+                                dropInsertAbove ? target.upcomingIndex() : target.upcomingIndex() + 1;
+                        insertBefore = clampUpcomingInsertBefore(insertBefore, target.seg());
+                        player.reorderUpcomingSnapshot(fromIdx, insertBefore);
+                        QueuePanelController.this.refreshAll();
                     }
                     event.setDropCompleted(true);
                 } else {
                     event.setDropCompleted(false);
                 }
+                hideDropInsert();
                 event.consume();
             });
 
             setOnDragDone(event -> {
-                setStyle("-fx-background-color: transparent; -fx-padding: 1 0 1 0;");
+                hideDropInsert();
+                queueListView.refresh();
                 event.consume();
             });
+        }
+
+        private int clampUpcomingInsertBefore(int insertBefore, QueueSeg seg) {
+            int uq = player.getUserQueueSize();
+            int pl = player.getPlaylistUpcomingCount();
+            int ap = player.getAutoplayUpcomingCount();
+            int lo =
+                    switch (seg) {
+                        case USER -> 0;
+                        case PLAYLIST -> uq;
+                        case AUTOPLAY -> uq + pl;
+                    };
+            int hi =
+                    switch (seg) {
+                        case USER -> uq;
+                        case PLAYLIST -> uq + pl;
+                        case AUTOPLAY -> uq + pl + ap;
+                    };
+            return Math.max(lo, Math.min(insertBefore, hi));
         }
 
         private String formatDuration(int seconds) {

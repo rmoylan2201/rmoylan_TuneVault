@@ -71,6 +71,18 @@ public final class CellStyleKit {
                 : "-fx-background-color: rgba(139,92,246,0.12); -fx-background-radius: 14;";
     }
 
+    /**
+     * Left-edge accent for “now playing” song rows (matches playlist {@code PlayableSongCell}).
+     */
+    public static Region nowPlayingEdgeBar() {
+        Region bar = new Region();
+        bar.setPrefWidth(3);
+        bar.setMinWidth(3);
+        bar.setMaxWidth(3);
+        bar.setStyle("-fx-background-color: #8b5cf6; -fx-background-radius: 2;");
+        return bar;
+    }
+
     // ── Row backgrounds (dark defaults; prefer getRow* in new code) ─
 
     public static final String ROW_DEFAULT  =
@@ -210,6 +222,26 @@ public final class CellStyleKit {
         if (!meta.getChildren().isEmpty()) {
             box.getChildren().add(meta);
         }
+        HBox.setHgrow(box, Priority.ALWAYS);
+        return box;
+    }
+
+    /**
+     * Search / history song row: title on the first line; second line is {@code "Song"} on the left
+     * and artist (and optional genre) to the right, same link behaviour as {@link #songMetaLine}.
+     */
+    public static VBox songTextBoxWithKind(
+            String title, String artist, String genre, Consumer<String> onOpenArtist) {
+        VBox box = new VBox(3, primary(title));
+        HBox metaRow = new HBox(10);
+        metaRow.setAlignment(Pos.CENTER_LEFT);
+        metaRow.getChildren().add(secondary("Song"));
+        HBox tail = songMetaLine(artist, genre, onOpenArtist);
+        if (!tail.getChildren().isEmpty()) {
+            HBox.setHgrow(tail, Priority.ALWAYS);
+            metaRow.getChildren().add(tail);
+        }
+        box.getChildren().add(metaRow);
         HBox.setHgrow(box, Priority.ALWAYS);
         return box;
     }

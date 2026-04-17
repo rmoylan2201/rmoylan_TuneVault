@@ -14,7 +14,7 @@ import javafx.scene.layout.VBox;
 import java.util.List;
 
 /**
- * Controls the Wrapped page and displays the user's listening summary.
+ * Controls the Wrapped page and displays listening highlight stats.
  */
 public class WrappedPageController {
 
@@ -34,10 +34,10 @@ public class WrappedPageController {
     private Label favoriteGenreLabel;
 
     @FXML
-    private Label totalMinutesLabel;
+    private Label genreQuizHintLabel;
 
     @FXML
-    private Label summaryLabel;
+    private Label totalMinutesLabel;
 
     @FXML
     private ProgressBar songBar;
@@ -62,7 +62,6 @@ public class WrappedPageController {
     @FXML private VBox topArtistCard;
     @FXML private VBox genreCard;
     @FXML private VBox timeCard;
-    @FXML private VBox summaryCard;
 
     private final WrappedStatsService wrappedStatsService = new WrappedStatsService();
     private StatsRange currentRange = StatsRange.DAILY;
@@ -73,12 +72,11 @@ public class WrappedPageController {
         updateRangeButtons();
 
         Platform.runLater(() -> {
-            UiMotionUtil.playStaggeredEntrance(List.of(topSongCard, topArtistCard, genreCard, timeCard, summaryCard));
+            UiMotionUtil.playStaggeredEntrance(List.of(topSongCard, topArtistCard, genreCard, timeCard));
             UiMotionUtil.applyHoverLift(topSongCard);
             UiMotionUtil.applyHoverLift(topArtistCard);
             UiMotionUtil.applyHoverLift(genreCard);
             UiMotionUtil.applyHoverLift(timeCard);
-            UiMotionUtil.applyHoverLift(summaryCard);
         });
 
         wrappedContent.sceneProperty().addListener((obs, oldScene, newScene) -> {
@@ -115,9 +113,9 @@ public class WrappedPageController {
 
         topSongLabel.setText(stats.getTopSong());
         topArtistLabel.setText(stats.getTopArtist());
-        favoriteGenreLabel.setText(stats.getFavoriteGenre());
+        favoriteGenreLabel.setText(resolveGenreHeadline(stats));
+        applyGenreQuizHint(stats);
         totalMinutesLabel.setText(formatDuration(stats.getTotalListeningSeconds()));
-        summaryLabel.setText(stats.getSummary());
 
         if (topSongArtistLabel != null) {
             String topSongArtistText = buildTopSongArtistText(stats);
@@ -140,6 +138,59 @@ public class WrappedPageController {
         if (rangeTitleLabel != null) {
             rangeTitleLabel.setText(range == StatsRange.DAILY ? "Today" : "Overall");
         }
+    }
+
+    private static String resolveGenreHeadline(WrappedStats stats) {
+        String fromListening = stats.getFavoriteGenre();
+        if (stats.getFavoriteGenreSeconds() > 0) {
+            return fromListening;
+        }
+        if (!stats.getQuizTasteBlend().isBlank()
+                && (fromListening == null
+                        || fromListening.isBlank()
+                        || isNoListeningGenrePlaceholder(fromListening))) {
+            return stats.getQuizTasteBlend();
+        }
+        return fromListening;
+    }
+
+    private void applyGenreQuizHint(WrappedStats stats) {
+        if (genreQuizHintLabel == null) {
+            return;
+        }
+        String blend = stats.getQuizTasteBlend();
+        boolean hasQuiz = blend != null && !blend.isBlank();
+        boolean listeningBacked =
+                stats.getFavoriteGenreSeconds() > 0
+                        && !isNoListeningGenrePlaceholder(stats.getFavoriteGenre());
+        if (hasQuiz && listeningBacked) {
+            String mode = stats.getQuizModeLabel();
+            String modeBit = mode == null || mode.isBlank() ? "Quiz" : mode + " quiz";
+            genreQuizHintLabel.setText(
+                    modeBit + " profile: " + blend + " · also influences recommendations and search");
+            genreQuizHintLabel.setVisible(true);
+            genreQuizHintLabel.setManaged(true);
+        } else if (hasQuiz) {
+            String mode = stats.getQuizModeLabel();
+            String modeBit =
+                    mode == null || mode.isBlank() ? "Taste questionnaire" : mode + " questionnaire";
+            genreQuizHintLabel.setText(
+                    modeBit + " · shapes recommendations until play history defines this card");
+            genreQuizHintLabel.setVisible(true);
+            genreQuizHintLabel.setManaged(true);
+        } else {
+            genreQuizHintLabel.setText("");
+            genreQuizHintLabel.setVisible(false);
+            genreQuizHintLabel.setManaged(false);
+        }
+    }
+
+    private static boolean isNoListeningGenrePlaceholder(String label) {
+        if (label == null || label.isBlank()) {
+            return true;
+        }
+        String l = label.trim().toLowerCase();
+        return l.contains("no listening");
     }
 
     private String buildTopSongArtistText(WrappedStats stats) {

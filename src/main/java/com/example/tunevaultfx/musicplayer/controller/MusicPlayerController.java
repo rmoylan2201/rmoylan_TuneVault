@@ -146,9 +146,25 @@ public class MusicPlayerController {
         autoplaySuggestionIndex = -1;
 
         lifecycleService.playQueue(songs, index, playlistName);
+        primeAutoplayUpNextIfNoPlaylistTail();
     }
 
     public void playSingleSong(Song song) {
+        if (song == null) {
+            return;
+        }
+        Song cur = state.getCurrentSong();
+        boolean singleContext =
+                activePlaylistSongs.isEmpty()
+                        && activePlaylistIndex < 0
+                        && !playingAutoplaySuggestions;
+        if (singleContext
+                && cur != null
+                && cur.songId() == song.songId()) {
+            togglePlayPause();
+            return;
+        }
+
         activePlaylistSongs.clear();
         activePlaylistIndex = -1;
         playingAutoplaySuggestions = false;
@@ -156,6 +172,7 @@ public class MusicPlayerController {
         autoplaySuggestionIndex = -1;
 
         lifecycleService.playSingleSong(song);
+        primeAutoplayUpNextIfNoPlaylistTail();
     }
 
     public void togglePlayPause() {
@@ -184,7 +201,9 @@ public class MusicPlayerController {
             }
 
             if (!state.isLoopEnabled()) {
-                startAutoplaySuggestions();
+                if (!beginAutoplayFromPrimedBufferIfPresent()) {
+                    startAutoplaySuggestions();
+                }
                 return;
             }
         }
@@ -193,7 +212,9 @@ public class MusicPlayerController {
         // instead of silently stopping. This covers songs played from search,
         // recent searches, and any other one-off play.
         if (state.getCurrentSong() != null && !state.isLoopEnabled()) {
-            startAutoplaySuggestions();
+            if (!beginAutoplayFromPrimedBufferIfPresent()) {
+                startAutoplaySuggestions();
+            }
             return;
         }
 
@@ -387,6 +408,85 @@ public class MusicPlayerController {
         autoplaySuggestions.clear();
         autoplaySuggestionIndex = -1;
         lifecycleService.playSingleSong(next);
+        primeAutoplayUpNextIfNoPlaylistTail();
+    }
+
+    /**
+     * When there is no in-playlist “up next”, preloads autoplay suggestions (index {@code -1}) so the
+     * queue panel shows upcoming audio before the current track ends.
+     */
+    private void primeAutoplayUpNextIfNoPlaylistTail() {
+        if (playingAutoplaySuggestions) {
+            return;
+        }
+        boolean hasPlaylistTail = !activePlaylistSongs.isEmpty()
+                && activePlaylistIndex >= 0
+                && activePlaylistIndex + 1 < activePlaylistSongs.size();
+        if (hasPlaylistTail) {
+            return;
+        }
+
+        ObservableList<Song> source = activePlaylistSongs.isEmpty()
+                ? (state.getCurrentSong() != null
+                        ? FXCollections.observableArrayList(state.getCurrentSong())
+                        : FXCollections.observableArrayList())
+                : activePlaylistSongs;
+
+        if (source.isEmpty()) {
+            return;
+        }
+
+        String playlistName = state.getCurrentSourcePlaylistName();
+        if (playlistName == null) {
+            playlistName = "";
+        }
+
+        ObservableList<Song> suggestions = recommendationService.getSuggestedSongsForPlaylist(
+                SessionManager.getCurrentUsername(),
+                playlistName,
+                source,
+                Math.max(8, TARGET_AUTOPLAY_BUFFER));
+
+        if (suggestions.isEmpty()) {
+            suggestions = recommendationService.getSuggestedSongsForUser(
+                    SessionManager.getCurrentUsername(), 10);
+        }
+        if (suggestions.isEmpty()) {
+            suggestions = recommendationService.getAutoplayContinuation(
+                    SessionManager.getCurrentUsername(),
+                    state.getCurrentSong(),
+                    collectExcludeIdsForAutoplayTopUp(),
+                    Math.max(TARGET_AUTOPLAY_BUFFER, AUTOPLAY_TOPUP_BATCH));
+        }
+
+        Song cur = state.getCurrentSong();
+        if (cur != null && cur.songId() > 0) {
+            suggestions.removeIf(s -> s != null && s.songId() == cur.songId());
+        }
+
+        if (suggestions.isEmpty()) {
+            return;
+        }
+
+        autoplaySuggestions.setAll(suggestions);
+        autoplaySuggestionIndex = -1;
+    }
+
+    /**
+     * When the current track ends (or user skips) with a primed autoplay buffer, start playback on
+     * the first suggestion without refetching.
+     */
+    private boolean beginAutoplayFromPrimedBufferIfPresent() {
+        if (autoplaySuggestions.isEmpty() || autoplaySuggestionIndex >= 0) {
+            return false;
+        }
+        activePlaylistSongs.clear();
+        activePlaylistIndex = -1;
+        playingAutoplaySuggestions = true;
+        autoplaySuggestionIndex = 0;
+        lifecycleService.playSingleSong(autoplaySuggestions.get(0));
+        topUpAutoplayBuffer();
+        return true;
     }
 
     private void startAutoplaySuggestions() {
@@ -539,6 +639,28 @@ public class MusicPlayerController {
         }
     }
 
+    /** Appends all songs to the manual play-next queue (after existing user-queued items). */
+    public void addSongsToUserQueueEnd(ObservableList<Song> songs) {
+        if (songs == null) {
+            return;
+        }
+        for (Song s : songs) {
+            if (s != null) {
+                userQueue.add(s);
+            }
+        }
+    }
+
+    /** Call when a playlist is removed from the library while it might be the playback source. */
+    public void onPlaylistDeleted(String playlistName) {
+        if (playlistName == null || playlistName.isBlank()) {
+            return;
+        }
+        if (playlistName.equals(state.getCurrentSourcePlaylistName())) {
+            stop();
+        }
+    }
+
     public void removeFromQueue(int index) {
         if (index >= 0 && index < userQueue.size()) {
             userQueue.remove(index);
@@ -550,6 +672,136 @@ public class MusicPlayerController {
         if (toIndex < 0 || toIndex >= userQueue.size()) return;
         Song song = userQueue.remove(fromIndex);
         userQueue.add(toIndex, song);
+    }
+
+    /**
+     * Moves a play-next item to sit before {@code insertBeforeIndex} in the user queue (0 = before
+     * first, userQueue.size() = after last). Indices are pre-move.
+     */
+    private void reorderUserQueueInsertBefore(int fromIndex, int insertBeforeIndex) {
+        if (fromIndex < 0 || fromIndex >= userQueue.size()) {
+            return;
+        }
+        if (insertBeforeIndex < 0 || insertBeforeIndex > userQueue.size()) {
+            return;
+        }
+        if (insertBeforeIndex == fromIndex) {
+            return;
+        }
+        Song song = userQueue.remove(fromIndex);
+        int i = insertBeforeIndex;
+        if (fromIndex < insertBeforeIndex) {
+            i--;
+        }
+        userQueue.add(i, song);
+    }
+
+    /** How many upcoming tracks come from the active playlist (after the current song). */
+    public int getPlaylistUpcomingCount() {
+        if (activePlaylistSongs.isEmpty() || activePlaylistIndex < 0) {
+            return 0;
+        }
+        return Math.max(0, activePlaylistSongs.size() - activePlaylistIndex - 1);
+    }
+
+    /** How many upcoming tracks are shown from autoplay / primed suggestions. */
+    public int getAutoplayUpcomingCount() {
+        if (playingAutoplaySuggestions) {
+            return Math.max(0, autoplaySuggestions.size() - autoplaySuggestionIndex - 1);
+        }
+        if (autoplaySuggestionIndex < 0 && !autoplaySuggestions.isEmpty()) {
+            return autoplaySuggestions.size();
+        }
+        return 0;
+    }
+
+    /**
+     * Reorders one upcoming row to another within the same segment (play-next, playlist tail, or
+     * autoplay tail). Display indices match {@link #getUpcomingQueueSnapshot()} order.
+     */
+    /** True if both display indices refer to the same upcoming bucket (play-next, playlist, autoplay). */
+    public boolean isSameUpcomingSegment(int displayA, int displayB) {
+        return upcomingSegment(displayA) == upcomingSegment(displayB);
+    }
+
+    private int upcomingSegment(int displayIndex) {
+        int uq = userQueue.size();
+        int pl = getPlaylistUpcomingCount();
+        if (displayIndex < uq) {
+            return 0;
+        }
+        if (displayIndex < uq + pl) {
+            return 1;
+        }
+        return 2;
+    }
+
+    /**
+     * Reorders within one upcoming segment. {@code insertBeforeDisplay} is the unified upcoming
+     * index before which the dragged row should appear (0 .. total). Use the row index for
+     * &quot;insert above&quot;, or row+1 for &quot;insert below&quot;.
+     */
+    public void reorderUpcomingSnapshot(int fromDisplay, int insertBeforeDisplay) {
+        if (fromDisplay < 0 || insertBeforeDisplay < 0) {
+            return;
+        }
+        int uq = userQueue.size();
+        int pl = getPlaylistUpcomingCount();
+        int ap = getAutoplayUpcomingCount();
+        int total = uq + pl + ap;
+        if (fromDisplay >= total || insertBeforeDisplay > total) {
+            return;
+        }
+
+        if (fromDisplay < uq) {
+            if (insertBeforeDisplay <= uq) {
+                reorderUserQueueInsertBefore(fromDisplay, insertBeforeDisplay);
+            }
+            return;
+        }
+        if (fromDisplay < uq + pl) {
+            if (insertBeforeDisplay >= uq && insertBeforeDisplay <= uq + pl) {
+                int base = activePlaylistIndex + 1;
+                int relFrom = fromDisplay - uq;
+                int absFrom = base + relFrom;
+                int absInsertBefore = base + (insertBeforeDisplay - uq);
+                if (absFrom < base
+                        || absFrom >= activePlaylistSongs.size()
+                        || absInsertBefore < base
+                        || absInsertBefore > activePlaylistSongs.size()) {
+                    return;
+                }
+                Song moved = activePlaylistSongs.remove(absFrom);
+                int i = absInsertBefore;
+                if (absFrom < absInsertBefore) {
+                    i--;
+                }
+                activePlaylistSongs.add(i, moved);
+                lifecycleService.resyncPlaylistQueueOrder(activePlaylistSongs, activePlaylistIndex);
+            }
+            return;
+        }
+        if (fromDisplay >= uq + pl) {
+            int base = playingAutoplaySuggestions ? autoplaySuggestionIndex + 1 : 0;
+            int segStart = uq + pl;
+            if (insertBeforeDisplay >= segStart && insertBeforeDisplay <= segStart + ap) {
+                int relFrom = fromDisplay - segStart;
+                int absFrom = base + relFrom;
+                int absInsertBefore = base + (insertBeforeDisplay - segStart);
+                if (absFrom < base
+                        || absFrom >= autoplaySuggestions.size()
+                        || absInsertBefore < base
+                        || absInsertBefore > autoplaySuggestions.size()) {
+                    return;
+                }
+                Song moved = autoplaySuggestions.remove(absFrom);
+                int i = absInsertBefore;
+                if (absFrom < absInsertBefore) {
+                    i--;
+                }
+                autoplaySuggestions.add(i, moved);
+            }
+        }
     }
 
     public void clearUserQueue() {
@@ -571,6 +823,8 @@ public class MusicPlayerController {
             for (int i = autoplaySuggestionIndex + 1; i < autoplaySuggestions.size(); i++) {
                 upcoming.add(autoplaySuggestions.get(i));
             }
+        } else if (autoplaySuggestionIndex < 0 && !autoplaySuggestions.isEmpty()) {
+            upcoming.addAll(autoplaySuggestions);
         }
 
         return upcoming;
@@ -630,8 +884,21 @@ public class MusicPlayerController {
             if (remaining < autoplayRemaining) {
                 autoplaySuggestionIndex = autoplaySuggestionIndex + 1 + remaining;
                 lifecycleService.playSingleSong(autoplaySuggestions.get(autoplaySuggestionIndex));
+                topUpAutoplayBuffer();
                 return;
             }
+            remaining -= autoplayRemaining;
+        }
+
+        if (autoplaySuggestionIndex < 0 && !autoplaySuggestions.isEmpty()
+                && remaining >= 0 && remaining < autoplaySuggestions.size()) {
+            activePlaylistSongs.clear();
+            activePlaylistIndex = -1;
+            playingAutoplaySuggestions = true;
+            autoplaySuggestionIndex = remaining;
+            state.setCurrentSourcePlaylistName("");
+            lifecycleService.playSingleSong(autoplaySuggestions.get(autoplaySuggestionIndex));
+            topUpAutoplayBuffer();
         }
     }
 

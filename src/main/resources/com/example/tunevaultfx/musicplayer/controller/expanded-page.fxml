@@ -92,6 +92,11 @@
                                 <Label fx:id="albumLabel"
                                        text="Album: -"
                                        styleClass="body-sm" />
+
+                                <Hyperlink text="Song details"
+                                           onAction="#handleOpenSongProfile"
+                                           styleClass="body-sm"
+                                           style="-fx-padding: 4 0 0 0;" />
                             </VBox>
 
                             <!-- Progress section -->

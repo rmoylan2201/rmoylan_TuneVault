@@ -32,6 +32,7 @@ public final class FxmlResources {
 
     public static final String SEARCH = "search/search-page.fxml";
     public static final String ARTIST_PROFILE = "profile/artist-profile-page.fxml";
+    public static final String SONG_PROFILE = "profile/song-profile-page.fxml";
 
     public static final String PLAYLISTS = "playlist/playlists-page.fxml";
 }

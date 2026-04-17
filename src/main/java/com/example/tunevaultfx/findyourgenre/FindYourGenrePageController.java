@@ -19,8 +19,10 @@ import javafx.scene.control.ToggleGroup;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.Node;
+import javafx.scene.Scene;
 import javafx.scene.layout.FlowPane;
 import javafx.scene.layout.HBox;
+import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
 
 import java.sql.SQLException;
@@ -40,7 +42,7 @@ public class FindYourGenrePageController {
     private static final String RESULTS_CARD_STYLE = "genre-quiz-card--results";
 
     private static final String SUBTITLE_DEFAULT =
-            "Choose Quick or Full, then Start quiz. Quick taps, no timer, no wrong answers — you can redo anytime. Keys 1–4 pick answers while the quiz runs.";
+            "Choose Quick or Full, then Start quiz. Quick taps, no timer, no wrong answers — you can redo anytime.";
     private static final String SUBTITLE_RESULTS =
             "Here’s what we heard from your picks. Play a mix to hear it in your library, or run the quiz again — nothing is permanent.";
 
@@ -59,9 +61,14 @@ public class FindYourGenrePageController {
     @FXML private Button startQuizButton;
 
     @FXML private VBox quizContainer;
+    @FXML private VBox genreQuizHero;
+    @FXML private VBox genreQuizSideRail;
     @FXML private VBox quizCard;
+    @FXML private VBox quizProgressBlock;
     @FXML private VBox lengthPanel;
-    @FXML private VBox quizActiveSection;
+    @FXML private VBox quickModeOffer;
+    @FXML private VBox fullModeOffer;
+    @FXML private VBox quizQuestionSection;
     @FXML private VBox quizInteractiveSection;
     @FXML private VBox resultSection;
     @FXML private Label resultsEyebrowLabel;
@@ -101,10 +108,25 @@ public class FindYourGenrePageController {
             if (awaitingStart) {
                 syncPickLengthProgressHint();
             }
+            syncModeOfferHighlight();
         });
+        wireModeOfferClicks();
+        syncModeOfferHighlight();
 
         Platform.runLater(() -> {
-            UiMotionUtil.playStaggeredEntrance(List.of(quizCard, lengthPanel));
+            Scene scene = quizContainer.getScene();
+            applyResponsiveDensity(scene != null ? scene.getWidth() : 1280);
+            List<Node> entrance = new ArrayList<>();
+            if (genreQuizHero != null) {
+                entrance.add(genreQuizHero);
+            }
+            if (quizCard != null) {
+                entrance.add(quizCard);
+            }
+            if (genreQuizSideRail != null) {
+                entrance.add(genreQuizSideRail);
+            }
+            UiMotionUtil.playStaggeredEntrance(entrance);
             UiMotionUtil.applyHoverLift(quizCard);
         });
 
@@ -143,8 +165,47 @@ public class FindYourGenrePageController {
     }
 
     private void applyResponsiveDensity(double width) {
-        boolean compact = width < 1300;
-        quizCard.setPrefWidth(compact ? 640 : 760);
+        boolean showSideRail = width >= 960;
+        if (genreQuizSideRail != null) {
+            genreQuizSideRail.setVisible(showSideRail);
+            genreQuizSideRail.setManaged(showSideRail);
+        }
+        if (quizCard != null) {
+            quizCard.setPrefWidth(Region.USE_COMPUTED_SIZE);
+            quizCard.setMaxWidth(Double.MAX_VALUE);
+        }
+    }
+
+    private void wireModeOfferClicks() {
+        if (quickModeOffer != null) {
+            quickModeOffer.setOnMouseClicked(
+                    e -> {
+                        modeQuickRadio.setSelected(true);
+                        e.consume();
+                    });
+        }
+        if (fullModeOffer != null) {
+            fullModeOffer.setOnMouseClicked(
+                    e -> {
+                        modeFullRadio.setSelected(true);
+                        e.consume();
+                    });
+        }
+    }
+
+    private void syncModeOfferHighlight() {
+        if (quickModeOffer != null) {
+            quickModeOffer.getStyleClass().remove("genre-quiz-mode-offer--on");
+        }
+        if (fullModeOffer != null) {
+            fullModeOffer.getStyleClass().remove("genre-quiz-mode-offer--on");
+        }
+        if (modeQuickRadio != null && modeQuickRadio.isSelected() && quickModeOffer != null) {
+            quickModeOffer.getStyleClass().add("genre-quiz-mode-offer--on");
+        }
+        if (modeFullRadio != null && modeFullRadio.isSelected() && fullModeOffer != null) {
+            fullModeOffer.getStyleClass().add("genre-quiz-mode-offer--on");
+        }
     }
 
     @FXML private void handleAnswer1() { chooseAnswer(0); }
@@ -181,6 +242,8 @@ public class FindYourGenrePageController {
         awaitingStart = false;
         setStartQuizButtonVisible(false);
         setLengthPanelVisible(false);
+        setQuizProgressVisible(true);
+        setQuizQuestionVisible(true);
         setQuizInteractiveVisible(true);
         setModeSelectionEnabled(false);
         currentIndex = 0;
@@ -264,7 +327,8 @@ public class FindYourGenrePageController {
         quizComplete = false;
         setResultsCardStyle(false);
         setStartQuizButtonVisible(false);
-        setQuizActiveVisible(true);
+        setQuizProgressVisible(true);
+        setQuizQuestionVisible(!awaitingStart);
         setQuizInteractiveVisible(!awaitingStart);
         setLengthPanelVisible(awaitingStart);
         resultSection.setVisible(false);
@@ -293,32 +357,24 @@ public class FindYourGenrePageController {
         quizComplete = true;
         setStartQuizButtonVisible(false);
         setLengthPanelVisible(false);
-        setQuizActiveVisible(false);
         setQuizInteractiveVisible(false);
 
         setResultsCardStyle(true);
+        setQuizProgressVisible(false);
+        setQuizQuestionVisible(false);
         if (pageSubtitleLabel != null) {
             pageSubtitleLabel.setText(SUBTITLE_RESULTS);
         }
 
-        List<String> top = GenreQuiz.topGenres(scores, 3);
+        GenreQuizAnalysis.AnalysisResult analysis = GenreQuizAnalysis.analyze(scores);
+        List<String> top = analysis.topGenresDisplay();
         resultChips.getChildren().clear();
 
         if (resultsEyebrowLabel != null) {
             resultsEyebrowLabel.setText("YOUR GENRE PROFILE");
         }
 
-        String headline;
-        String summary;
-        if (top.isEmpty()) {
-            headline = "We need a clearer read";
-            summary = "Try again and tap the answers that feel closest today — or skip less so we get a stronger signal.";
-        } else if (top.size() == 1) {
-            headline = top.get(0);
-            summary = "We’ll steer playlists, suggestions, and search toward this world. Change your mind anytime with Try again.";
-        } else {
-            headline = "Your blend";
-            summary = "Recommendations will mix these together. Nothing is locked — redo the quiz whenever your taste shifts.";
+        if (top.size() > 1) {
             for (String g : top) {
                 Label chip = new Label(g);
                 chip.getStyleClass().addAll("genre-result-chip", "genre-result-chip-hero");
@@ -330,17 +386,17 @@ public class FindYourGenrePageController {
             resultChips.setVisible(showChips);
             resultChips.setManaged(showChips);
         }
-        resultHeadlineLabel.setText(headline);
-        resultSummaryLabel.setText(summary);
+        resultHeadlineLabel.setText(analysis.headline());
+        resultSummaryLabel.setText(analysis.summaryForUi());
 
-        playMixButton.setDisable(top.isEmpty());
+        playMixButton.setDisable(analysis.isEmptySignal());
         restartButton.setDisable(false);
         setModeSelectionEnabled(true);
 
         resultSection.setVisible(true);
         resultSection.setManaged(true);
 
-        persistDiscovery(top);
+        persistDiscovery(top, analysis);
 
         Platform.runLater(() -> {
             List<Node> entrance = new ArrayList<>(List.of(
@@ -356,7 +412,7 @@ public class FindYourGenrePageController {
         });
     }
 
-    private void persistDiscovery(List<String> topDisplay) {
+    private void persistDiscovery(List<String> topDisplay, GenreQuizAnalysis.AnalysisResult analysis) {
         String user = SessionManager.getCurrentUsername();
         if (user == null || user.isBlank()) {
             savedHintLabel.setText("Sign in to save your mix to your account.");
@@ -364,7 +420,7 @@ public class FindYourGenrePageController {
         }
 
         GenreQuiz.QuizMode mode = currentMode();
-        Map<String, Double> boosts = GenreQuiz.toRecommendationBoosts(scores);
+        Map<String, Double> boosts = analysis.recommendationBoosts();
         if (boosts.isEmpty()) {
             savedHintLabel.setText("");
             return;
@@ -382,7 +438,8 @@ public class FindYourGenrePageController {
 
         try {
             genreDiscoveryDAO.save(user, mode.name(), one, two, three, boosts);
-            savedHintLabel.setText("Saved to your profile — playlists, autoplay, and search now blend this in.");
+            savedHintLabel.setText(
+                    "Saved to your profile — recommendations, search, Wrapped, and autoplay use this taste signal.");
         } catch (SQLException e) {
             e.printStackTrace();
             savedHintLabel.setText("Could not save to the database. Your mix still plays locally.");
@@ -403,7 +460,8 @@ public class FindYourGenrePageController {
 
         setResultsCardStyle(false);
         setLengthPanelVisible(true);
-        setQuizActiveVisible(true);
+        setQuizProgressVisible(true);
+        setQuizQuestionVisible(false);
         setQuizInteractiveVisible(false);
         resultSection.setVisible(false);
         resultSection.setManaged(false);
@@ -436,6 +494,7 @@ public class FindYourGenrePageController {
         setModeSelectionEnabled(true);
         setStartQuizButtonVisible(true);
         syncPickLengthProgressHint();
+        syncModeOfferHighlight();
     }
 
     private void syncPickLengthProgressHint() {
@@ -464,12 +523,20 @@ public class FindYourGenrePageController {
         lengthPanel.setManaged(visible);
     }
 
-    private void setQuizActiveVisible(boolean visible) {
-        if (quizActiveSection == null) {
+    private void setQuizProgressVisible(boolean visible) {
+        if (quizProgressBlock == null) {
             return;
         }
-        quizActiveSection.setVisible(visible);
-        quizActiveSection.setManaged(visible);
+        quizProgressBlock.setVisible(visible);
+        quizProgressBlock.setManaged(visible);
+    }
+
+    private void setQuizQuestionVisible(boolean visible) {
+        if (quizQuestionSection == null) {
+            return;
+        }
+        quizQuestionSection.setVisible(visible);
+        quizQuestionSection.setManaged(visible);
     }
 
     private void setQuizInteractiveVisible(boolean visible) {

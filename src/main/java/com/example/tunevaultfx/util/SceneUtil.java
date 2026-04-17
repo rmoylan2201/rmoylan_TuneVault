@@ -1,79 +1,138 @@
 package com.example.tunevaultfx.util;
 
-import javafx.application.Platform;
+import com.example.tunevaultfx.chrome.SearchBarState;
+import com.example.tunevaultfx.view.FxmlResources;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Node;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
 
-import com.example.tunevaultfx.view.FxmlResources;
-
 import java.io.IOException;
-import java.util.ArrayDeque;
-import java.util.Deque;
+import java.util.ArrayList;
+import java.util.List;
+
 /**
- * Centralized scene switching with navigation history.
- * Every {@link #switchScene} call pushes the current page onto a stack
- * so {@link #goBack} can return the user to where they actually came from.
+ * Centralized scene switching with browser-style navigation: a linear history with back/forward.
+ * <p>
+ * {@link #switchScene} appends a new page and drops any "forward" tail (same as navigating after
+ * using Back). {@link #switchSceneNoHistory} replaces the entire trail with a single page (auth and
+ * similar flows).
  */
 public final class SceneUtil {
 
     private static final String CSS_PATH  = "/com/example/tunevaultfx/app.css";
     private static final String FXML_BASE = FxmlResources.CLASSPATH_PREFIX;
 
-    private static final Deque<String> history = new ArrayDeque<>();
+    private static final List<String> entries = new ArrayList<>();
+    private static int currentIndex = -1;
     private static String currentPage = null;
+
+    /**
+     * Latest top bar registers this so back/forward buttons stay in sync after each navigation.
+     * Replaced on every new page load since each root has a fresh {@code AppTopBarController}.
+     */
+    private static Runnable historyRefreshHandler;
 
     private SceneUtil() {}
 
-    public static void switchScene(Node sourceNode, String fxmlFile) throws IOException {
-        if (currentPage != null) {
-            history.push(currentPage);
+    public static void setHistoryRefreshHandler(Runnable handler) {
+        historyRefreshHandler = handler;
+    }
+
+    private static void notifyHistoryChanged() {
+        if (historyRefreshHandler != null) {
+            try {
+                historyRefreshHandler.run();
+            } catch (RuntimeException ignored) {
+                // avoid breaking navigation if UI refresh fails
+            }
         }
-        currentPage = fxmlFile;
+    }
+
+    public static void switchScene(Node sourceNode, String fxmlFile) throws IOException {
+        if (currentIndex < 0 || entries.isEmpty()) {
+            entries.clear();
+            entries.add(fxmlFile);
+            currentIndex = 0;
+        } else {
+            while (entries.size() > currentIndex + 1) {
+                entries.remove(entries.size() - 1);
+            }
+            if (fxmlFile.equals(entries.get(currentIndex))) {
+                loadScene(sourceNode, fxmlFile);
+                return;
+            }
+            entries.add(fxmlFile);
+            currentIndex++;
+        }
         loadScene(sourceNode, fxmlFile);
     }
 
     /**
-     * Go back to the previous page. If there's no history, goes to main-menu.
-     */
-    public static void goBack(Node sourceNode) throws IOException {
-        String target = history.isEmpty() ? FxmlResources.MAIN_MENU : history.pop();
-        currentPage = target;
-        loadScene(sourceNode, target);
-    }
-
-    /**
-     * Navigate without pushing to history (used for auth flows where
-     * you don't want "back" to return to login after signing in).
+     * Replace navigation history with this page only (login, logout, auth sub-pages).
      */
     public static void switchSceneNoHistory(Node sourceNode, String fxmlFile) throws IOException {
-        currentPage = fxmlFile;
+        entries.clear();
+        entries.add(fxmlFile);
+        currentIndex = 0;
         loadScene(sourceNode, fxmlFile);
+    }
+
+    public static void goBack(Node sourceNode) throws IOException {
+        if (!canGoBack()) {
+            return;
+        }
+        currentIndex--;
+        loadScene(sourceNode, entries.get(currentIndex));
+    }
+
+    public static void goForward(Node sourceNode) throws IOException {
+        if (!canGoForward()) {
+            return;
+        }
+        currentIndex++;
+        loadScene(sourceNode, entries.get(currentIndex));
+    }
+
+    public static boolean canGoBack() {
+        return currentIndex > 0;
+    }
+
+    public static boolean canGoForward() {
+        return currentIndex >= 0 && currentIndex < entries.size() - 1;
     }
 
     /**
      * Clear all navigation history. Call on logout / session reset.
      */
     public static void clearHistory() {
-        history.clear();
+        entries.clear();
+        currentIndex = -1;
         currentPage = null;
-    }
-
-    public static boolean hasHistory() {
-        return !history.isEmpty();
+        historyRefreshHandler = null;
+        notifyHistoryChanged();
     }
 
     /**
-     * Page on top of the back stack (where {@link #goBack} would return), without removing it.
-     * Used e.g. to highlight the correct sidebar section while on the artist profile.
+     * @deprecated use {@link #canGoBack()}
      */
-    public static String peekHistory() {
-        return history.isEmpty() ? null : history.peek();
+    @Deprecated
+    public static boolean hasHistory() {
+        return canGoBack();
     }
 
-    /** Current FXML path relative to {@link FxmlResources#CLASSPATH_PREFIX} (e.g. {@code search/search-page.fxml}). */
+    /**
+     * Page you would return to with Back, without changing history.
+     */
+    public static String peekHistory() {
+        if (currentIndex <= 0) {
+            return null;
+        }
+        return entries.get(currentIndex - 1);
+    }
+
+    /** Current FXML path relative to {@link FxmlResources#CLASSPATH_PREFIX}. */
     public static String getCurrentPage() {
         return currentPage;
     }
@@ -102,11 +161,15 @@ public final class SceneUtil {
     }
 
     private static void loadScene(Node sourceNode, String fxmlFile) throws IOException {
+        // Drop the search subscriber before tearing down the old root so debounced query updates
+        // cannot run against a detached SearchPageController (symptom: "typing shows nothing").
+        SearchBarState.clearSearchSubscriber();
+
         Stage stage = (Stage) sourceNode.getScene().getWindow();
         Scene scene = stage.getScene();
 
-        FXMLLoader loader = new FXMLLoader(
-                SceneUtil.class.getResource(FXML_BASE + fxmlFile));
+        FXMLLoader loader =
+                new FXMLLoader(SceneUtil.class.getResource(FXML_BASE + fxmlFile));
         Parent root = loader.load();
 
         String cssUrl = SceneUtil.class.getResource(CSS_PATH).toExternalForm();
@@ -116,5 +179,7 @@ public final class SceneUtil {
 
         scene.setRoot(root);
         applySavedTheme(scene);
+        currentPage = fxmlFile;
+        notifyHistoryChanged();
     }
 }

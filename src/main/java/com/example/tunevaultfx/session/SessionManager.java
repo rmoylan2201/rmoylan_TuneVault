@@ -1,5 +1,6 @@
 package com.example.tunevaultfx.session;
 
+import com.example.tunevaultfx.chrome.SearchBarState;
 import com.example.tunevaultfx.core.Song;
 import com.example.tunevaultfx.db.DbSchemaPatches;
 import com.example.tunevaultfx.db.SearchHistoryDAO;
@@ -32,8 +33,12 @@ public final class SessionManager {
     private static String      currentUsername;
     private static UserProfile currentUserProfile;
     private static String      requestedPlaylistToOpen;
+    /** After rename, playlists page should select this name (see {@link #peekPendingPlaylistRenameSelection()}). */
+    private static String      pendingPlaylistRenameSelectName;
     private static Song        selectedSong;
     private static String      selectedArtist;
+    /** When non-null, Profile opens this user's public view (search / social navigation). */
+    private static String      profileViewUsername;
 
     // ── Shared lists ──────────────────────────────────────────────
     private static final ObservableList<SearchRecentItem> recentSearches =
@@ -62,10 +67,17 @@ public final class SessionManager {
      * blocking the UI.
      */
     public static void startSession(String username) {
+        // Drop any subscriber from a previous scene graph and clear the query so logging in
+        // never inherits a stale top-bar string or triggers an immediate ranked search.
+        SearchBarState.clearSearchSubscriber();
+        SearchBarState.clearQuery();
+
         currentUsername         = username;
         selectedSong            = null;
         selectedArtist          = null;
         requestedPlaylistToOpen = null;
+        pendingPlaylistRenameSelectName = null;
+        profileViewUsername     = null;
         songLibrary             = null;
 
         DbSchemaPatches.ensureAppUserProfileMediaColumns();
@@ -118,8 +130,10 @@ public final class SessionManager {
         currentUsername         = null;
         currentUserProfile      = null;
         requestedPlaylistToOpen = null;
+        pendingPlaylistRenameSelectName = null;
         selectedSong            = null;
         selectedArtist          = null;
+        profileViewUsername     = null;
         songLibrary             = null;
         recentSearches.clear();
     }
@@ -166,11 +180,38 @@ public final class SessionManager {
         return value;
     }
 
+    public static void setPendingPlaylistRenameSelection(String newPlaylistName) {
+        pendingPlaylistRenameSelectName = newPlaylistName;
+    }
+
+    public static String peekPendingPlaylistRenameSelection() {
+        return pendingPlaylistRenameSelectName;
+    }
+
+    public static String consumePendingPlaylistRenameSelection() {
+        String s = pendingPlaylistRenameSelectName;
+        pendingPlaylistRenameSelectName = null;
+        return s;
+    }
+
     public static void setSelectedSong(Song song)     { selectedSong   = song;   }
     public static Song getSelectedSong()              { return selectedSong;      }
 
     public static void setSelectedArtist(String artist) { selectedArtist = artist; }
     public static String getSelectedArtist()            { return selectedArtist;   }
+
+    public static void setProfileViewUsername(String username) {
+        profileViewUsername =
+                username == null || username.isBlank() ? null : username.trim();
+    }
+
+    public static String getProfileViewUsername() {
+        return profileViewUsername;
+    }
+
+    public static void clearProfileViewUsername() {
+        profileViewUsername = null;
+    }
 
     // ─────────────────────────────────────────────────────────────
     // Recent searches

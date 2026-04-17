@@ -1,6 +1,7 @@
 package com.example.tunevaultfx.playlist.cell;
 
 import com.example.tunevaultfx.core.Song;
+import com.example.tunevaultfx.musicplayer.controller.MusicPlayerController;
 import com.example.tunevaultfx.util.AppTheme;
 import com.example.tunevaultfx.util.CellStyleKit;
 import com.example.tunevaultfx.util.SongContextMenuBuilder;
@@ -34,6 +35,8 @@ public class SuggestedSongCell extends ListCell<Song> {
     private final Consumer<Song> onPlay;
     private final Consumer<String> onOpenArtist;
     private final Consumer<Song> onOpenAddToPlaylist;
+
+    private final MusicPlayerController player = MusicPlayerController.getInstance();
 
     private final HBox      root       = new HBox(10);
     private final StackPane addWrapper = new StackPane();
@@ -115,6 +118,32 @@ public class SuggestedSongCell extends ListCell<Song> {
                 + "-fx-background-radius: 15; -fx-padding: 0;";
     }
 
+    private static String playCurrentPlayingRestStyle() {
+        if (AppTheme.isLightMode()) {
+            return "-fx-background-color: #7c3aed;"
+                    + "-fx-text-fill: white;"
+                    + "-fx-font-size: 12px; -fx-font-weight: bold;"
+                    + "-fx-background-radius: 15; -fx-padding: 0;";
+        }
+        return "-fx-background-color: rgba(139,92,246,0.25);"
+                + "-fx-text-fill: #c4b5fd;"
+                + "-fx-font-size: 12px; -fx-font-weight: bold;"
+                + "-fx-background-radius: 15; -fx-padding: 0;";
+    }
+
+    private static String playCurrentPausedRestStyle() {
+        if (AppTheme.isLightMode()) {
+            return "-fx-background-color: rgba(124,58,237,0.22);"
+                    + "-fx-text-fill: #5b21b6;"
+                    + "-fx-font-size: 13px; -fx-font-weight: bold;"
+                    + "-fx-background-radius: 15; -fx-padding: 0;";
+        }
+        return "-fx-background-color: rgba(139,92,246,0.14);"
+                + "-fx-text-fill: #ddd6fe;"
+                + "-fx-font-size: 13px; -fx-font-weight: bold;"
+                + "-fx-background-radius: 15; -fx-padding: 0;";
+    }
+
     // ─────────────────────────────────────────────────────────────
 
     public SuggestedSongCell(
@@ -165,7 +194,8 @@ public class SuggestedSongCell extends ListCell<Song> {
         // Row hover — reveal both the play button and the + button
         root.setOnMouseEntered(e -> {
             root.setStyle(CellStyleKit.getRowHover());
-            playButton.setStyle(playVisibleStyle());
+            Song s = getItem();
+            applyPlayButtonStyle(s, true);
             if (addButton.getText().equals("+")) {
                 addButton.setStyle(ADD_VISIBLE);
                 fade(addButton, true);
@@ -173,7 +203,8 @@ public class SuggestedSongCell extends ListCell<Song> {
         });
         root.setOnMouseExited(e -> {
             root.setStyle(CellStyleKit.getRowDefault());
-            playButton.setStyle(playDefaultStyle());
+            Song s = getItem();
+            applyPlayButtonStyle(s, false);
             if (addButton.getText().equals("+")) {
                 fade(addButton, false);
                 PauseTransition delay = new PauseTransition(Duration.millis(180));
@@ -187,11 +218,8 @@ public class SuggestedSongCell extends ListCell<Song> {
         // Play button hover
         playButton.setOnMouseEntered(e -> playButton.setStyle(playHoverStyle()));
         playButton.setOnMouseExited(e -> {
-            if (root.isHover()) {
-                playButton.setStyle(playVisibleStyle());
-            } else {
-                playButton.setStyle(playDefaultStyle());
-            }
+            Song s = getItem();
+            applyPlayButtonStyle(s, root.isHover());
         });
 
         // Add button hover
@@ -287,7 +315,13 @@ public class SuggestedSongCell extends ListCell<Song> {
         addButton.setText("+");
         addButton.setStyle(ADD_HIDDEN);
         addButton.setOpacity(0);
-        playButton.setStyle(playDefaultStyle());
+
+        boolean current = isCurrentSong(song);
+        boolean audioPlaying = current && player.isPlaying();
+        playButton.setText(audioPlaying ? "⏸" : "▶");
+        root.setStyle(current ? CellStyleKit.getRowPlaying() : CellStyleKit.getRowDefault());
+        CellStyleKit.markPlaying(root, current);
+        applyPlayButtonStyle(song, root.isHover());
 
         setText(null); setGraphic(root);
         setBackground(Background.EMPTY);
@@ -310,5 +344,26 @@ public class SuggestedSongCell extends ListCell<Song> {
         PauseTransition p = new PauseTransition(Duration.millis(700));
         p.setOnFinished(e -> { addButton.setText("+"); addButton.setStyle(ADD_VISIBLE); });
         p.play();
+    }
+
+    private boolean isCurrentSong(Song s) {
+        return s != null
+                && player.getCurrentSong() != null
+                && player.getCurrentSong().songId() == s.songId();
+    }
+
+    private void applyPlayButtonStyle(Song s, boolean rowHovered) {
+        if (s == null) {
+            return;
+        }
+        if (!isCurrentSong(s)) {
+            playButton.setStyle(rowHovered ? playVisibleStyle() : playDefaultStyle());
+            return;
+        }
+        if (player.isPlaying()) {
+            playButton.setStyle(rowHovered ? playHoverStyle() : playCurrentPlayingRestStyle());
+        } else {
+            playButton.setStyle(rowHovered ? playHoverStyle() : playCurrentPausedRestStyle());
+        }
     }
 }

@@ -23,12 +23,6 @@
                 <VBox spacing="20" style="-fx-padding: 20 32 20 32;">
                     <children>
 
-                        <HBox alignment="CENTER_LEFT" style="-fx-padding: 0 0 4 0;">
-                            <Button fx:id="backButton" text="Back"
-                                    onAction="#handleBack"
-                                    styleClass="btn-ghost"/>
-                        </HBox>
-
                         <!-- Hero card -->
                         <HBox spacing="28" alignment="CENTER_LEFT" styleClass="hero-gradient">
                             <children>
@@ -51,6 +45,19 @@
                                     <Label fx:id="artistSummaryLabel"
                                            text="Songs available: 0"
                                            styleClass="body-sm"/>
+                                    <HBox spacing="12" alignment="CENTER_LEFT">
+                                        <Button fx:id="playDiscographyButton" text="Play discography"
+                                                onAction="#handlePlayDiscography"
+                                                styleClass="btn-primary"
+                                                minHeight="40" prefHeight="40"
+                                                maxWidth="220" focusTraversable="false"/>
+                                        <Button fx:id="followArtistButton" text="Follow"
+                                                onAction="#handleFollowArtist"
+                                                styleClass="btn-ghost"
+                                                minHeight="40" prefHeight="40"
+                                                managed="false" visible="false"
+                                                focusTraversable="false"/>
+                                    </HBox>
                                 </VBox>
 
                             </children>
@@ -65,7 +72,7 @@
                                         <Label text="♫" styleClass="text-accent"/>
                                     </StackPane>
                                     <Label text="Discography" styleClass="heading-lg"/>
-                                    <Label text="Double-click to play · Right-click for more" styleClass="caption"/>
+                                    <Label text="Play button or double-click · Right-click for more" styleClass="caption"/>
                                 </HBox>
 
                                 <Separator/>
